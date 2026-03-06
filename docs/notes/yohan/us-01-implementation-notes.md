@@ -59,6 +59,29 @@ To avoid browser/container hostname mismatch during JWT validation:
 
 This keeps issuer validation aligned with the browser-visible URL while still allowing internal container networking.
 
+## Token Usage Rule
+
+- The browser sends the **access token** to `api-gateway` for API calls.
+- `api-gateway` forwards the same **access token** to downstream services.
+- Downstream services validate the forwarded **access token** as resource servers.
+- The **ID token** is not used for API authorization.
+- The **ID token** is kept only for client-side identity/session concerns such as OIDC logout.
+
+## Why the ID Token Is Used for Logout
+
+For logout, the browser redirects to the Keycloak end-session endpoint and includes:
+
+- `id_token_hint`
+- `post_logout_redirect_uri`
+
+The `id_token_hint` helps Keycloak identify which authenticated browser session should be terminated. This is an identity-provider concern, not an API authorization concern.
+
+Practical rule for this project:
+
+- Use **access token** for browser -> gateway -> downstream API calls
+- Use **ID token** only as an OIDC logout/session hint on the client side
+- Do not forward the **ID token** to downstream services
+
 ## Local Admin Usage
 
 - Use `http://localhost:8180/auth/admin` when you need to inspect realms, users, clients, roles, or tweak Keycloak settings directly.
