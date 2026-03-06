@@ -1,3 +1,24 @@
+server:
+  port: ${SERVER_PORT:8081}
+
 spring:
   application:
     name: user-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:8080/auth/realms/perapulse}
+          jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI:http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+info:
+  app:
+    name: PeraPulse User Service
+    description: User service test endpoint for US-01 auth validation.
+    support-email: contact@perapulse.local

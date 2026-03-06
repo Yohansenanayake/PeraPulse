@@ -12,7 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U perapulse"]
       interval: 10s
@@ -29,12 +29,17 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak_db
       KC_DB_USERNAME: perapulse
       KC_DB_PASSWORD: perapulse_secret
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT: "false"
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
       - "8180:8080"
     volumes:
-      - ./infra/keycloak:/opt/keycloak/data/import
+      - ./keycloak:/opt/keycloak/data/import
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,7 +73,7 @@ services:
     environment:
       CONFIG_FILEPATH: /etc/rpConsole/config.yaml
     volumes:
-      - ./infra/redpanda/console-config.yaml:/etc/rpConsole/config.yaml
+      - ./redpanda/console-config.yaml:/etc/rpConsole/config.yaml
     ports:
       - "8888:8080"
     depends_on:
@@ -76,14 +81,14 @@ services:
 
   # ─── Microservices ────────────────────────────────────────────
   user-service:
-    build: ./services/user-service
+    build: ../services/user-service
     container_name: perapulse-user-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/user_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/perapulse
-      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
     ports:
       - "8081:8081"
     depends_on:
@@ -91,17 +96,16 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_started
-      redpanda:
-        condition: service_healthy
 
   feed-service:
-    build: ./services/feed-service
+    build: ../services/feed-service
     container_name: perapulse-feed-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/feed_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
     ports:
       - "8082:8082"
@@ -112,13 +116,14 @@ services:
         condition: service_healthy
 
   opportunities-service:
-    build: ./services/opportunities-service
+    build: ../services/opportunities-service
     container_name: perapulse-opportunities-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/opportunities_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
     ports:
       - "8083:8083"
@@ -129,13 +134,14 @@ services:
         condition: service_healthy
 
   events-service:
-    build: ./services/events-service
+    build: ../services/events-service
     container_name: perapulse-events-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/events_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
     ports:
       - "8084:8084"
@@ -146,13 +152,14 @@ services:
         condition: service_healthy
 
   notification-service:
-    build: ./services/notification-service
+    build: ../services/notification-service
     container_name: perapulse-notification-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
     ports:
       - "8085:8085"
@@ -163,13 +170,14 @@ services:
         condition: service_healthy
 
   analytics-service:
-    build: ./services/analytics-service
+    build: ../services/analytics-service
     container_name: perapulse-analytics-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/analytics_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
     ports:
       - "8086:8086"
@@ -180,10 +188,12 @@ services:
         condition: service_healthy
 
   api-gateway:
-    build: ./services/api-gateway
+    build: ../services/api-gateway
     container_name: perapulse-api-gateway
     environment:
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       USER_SERVICE_URL: http://user-service:8081
       FEED_SERVICE_URL: http://feed-service:8082
       OPPORTUNITIES_SERVICE_URL: http://opportunities-service:8083
@@ -193,12 +203,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - user-service
-      - feed-service
-      - opportunities-service
-      - events-service
-      - notification-service
-      - analytics-service
+      keycloak:
+        condition: service_started
+      user-service:
+        condition: service_started
 
   # ─── React Web App ────────────────────────────────────────────
   # Uncomment once the React client is scaffolded

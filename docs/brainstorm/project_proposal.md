@@ -585,10 +585,11 @@ Topics follow domain service boundaries (4 topics for MVP):
 |---|---|
 | Realm | `perapulse` |
 | Hosting | Self-hosted on AKS (Keycloak 24.x Docker image) |
-| Clients | `web-client` (public, PKCE), `mobile-client` (public, PKCE), `api-gateway` (confidential), `user-service` (confidential, service account for Admin API) |
+| Clients | `web-client` (public, PKCE), `mobile-client` (public, PKCE), `api-gateway` (confidential, optional for admin use), `user-service` (confidential, service account for Admin API), `perapulse-web-test` (public, PKCE, local auth slice) |
 | Realm Roles | `STUDENT`, `ALUMNI`, `ADMIN` |
 | Default Role | `STUDENT` (assigned on registration) |
 | Token Lifetime | Access: 5 min, Refresh: 30 min |
+| Local Admin Access | `http://localhost:8180/auth/admin` |
 
 ### Authorization Matrix
 
@@ -608,8 +609,18 @@ Topics follow domain service boundaries (4 topics for MVP):
 ### JWT Validation Flow
 1. Client obtains token from Keycloak via OIDC PKCE flow
 2. Client sends `Authorization: Bearer <token>` with API requests
-3. API Gateway / each service validates JWT against Keycloak JWKS endpoint
-4. Spring Security extracts roles from JWT claims, enforces `@PreAuthorize`
+3. API Gateway validates JWT against Keycloak JWKS endpoint
+4. Downstream resource services also validate JWT against Keycloak JWKS endpoint
+5. Spring Security extracts roles from JWT claims, enforces `@PreAuthorize`
+
+### Current Local US-01 Authentication Slice
+
+- Browser entry point is the temporary auth test page served by `api-gateway` at `http://localhost:8080/`
+- Browser-facing auth URL is `http://localhost:8080/auth`
+- Direct Keycloak admin access is exposed on `http://localhost:8180/auth/admin`
+- `api-gateway` and `user-service` both validate JWTs
+- The initial validation endpoint is `GET /api/users/info`
+- A public comparison endpoint is `GET /api/users/public-info`
 
 ---
 
@@ -656,7 +667,7 @@ ConfigMaps & Secrets:
 ```yaml
 services:
   postgres:          # Single Postgres instance, multiple databases
-  keycloak:          # Keycloak with pre-configured perapulse realm
+  keycloak:          # Keycloak with pre-configured perapulse realm, direct admin access on localhost:8180
   redpanda:          # Kafka-compatible, lightweight
   redpanda-console:  # UI for topic inspection
   user-service:
@@ -668,6 +679,12 @@ services:
   api-gateway:
   react-web:
 ```
+
+Current local auth/testing entry points:
+
+- `http://localhost:8080/` → temporary auth test page served by `api-gateway`
+- `http://localhost:8080/auth` → Keycloak through the gateway path used by the browser auth flow
+- `http://localhost:8180/auth/admin` → direct Keycloak admin console for configuration and inspection
 
 ### CI/CD Pipeline (GitHub Actions)
 

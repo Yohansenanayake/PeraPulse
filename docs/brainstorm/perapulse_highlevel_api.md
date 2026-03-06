@@ -58,18 +58,26 @@
   - `web-client` (public)
   - `mobile-client` (public)
   - `api-gateway` (confidential) *optional*
+  - `perapulse-web-test` (public, local temporary PKCE test page)
 - **Roles** (realm roles):
   - `STUDENT`, `ALUMNI`, `ADMIN`
 
 ### Auth flow
 - Web/Mobile uses **OIDC Authorization Code + PKCE**
-- Services validate JWT (Keycloak public keys / JWKS)
+- API Gateway validates JWT (Keycloak public keys / JWKS)
+- Downstream resource services also validate JWT
 - Authorization:
   - `ADMIN` can moderate + manage platform
   - `ALUMNI` can post jobs, events, research offers (policy choice)
   - `STUDENT` can apply, RSVP, post, comment
 
 > Tip: Keep authorization checks mostly in services (Spring Security), with optional route-level checks at Gateway.
+
+### Current local auth slice
+- Browser auth flow runs through `http://localhost:8080/auth`
+- Direct Keycloak admin access is exposed on `http://localhost:8180/auth/admin`
+- Temporary auth test UI is served from `api-gateway` at `http://localhost:8080/`
+- Initial protected endpoint: `GET /api/users/info`
 
 ---
 

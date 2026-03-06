@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PeraPulse Auth Test</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f4ee;
+      --panel: #fffdf7;
+      --ink: #16211d;
+      --muted: #54625c;
+      --accent: #0d6b4d;
+      --accent-2: #d78b28;
+      --border: #d9d1c1;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      background:
+        radial-gradient(circle at top left, rgba(215, 139, 40, 0.18), transparent 32%),
+        linear-gradient(180deg, #f2efe6 0%, var(--bg) 100%);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 40px 20px 64px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1;
+    }
+
+    p {
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin-top: 24px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(22, 33, 29, 0.06);
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 16px;
+      font: inherit;
+      cursor: pointer;
+      color: white;
+      background: var(--accent);
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    button.secondary {
+      background: var(--accent-2);
+    }
+
+    pre {
+      background: #f2eee3;
+      border-radius: 14px;
+      padding: 14px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid var(--border);
+      min-height: 140px;
+    }
+
+    .status {
+      font-weight: bold;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>PeraPulse US-01 Auth Test</h1>
+    <p>
+      Temporary browser page for validating Keycloak Authorization Code + PKCE,
+      gateway JWT validation, and user-service protected endpoint access.
+    </p>
+
+    <div class="panel">
+      <p class="status" id="status">Not authenticated.</p>
+      <button id="login">Log in with Keycloak</button>
+      <button id="logout" class="secondary">Log out</button>
+      <button id="public-call">Call public endpoint</button>
+      <button id="protected-call">Call protected endpoint</button>
+    </div>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Session</h2>
+        <pre id="session-output">No token stored.</pre>
+      </section>
+      <section class="panel">
+        <h2>API Output</h2>
+        <pre id="api-output">No request made yet.</pre>
+      </section>
+    </div>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
