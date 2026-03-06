@@ -1,0 +1,19 @@
+-- PeraPulse — PostgreSQL database initialisation
+-- Creates all service databases with the shared perapulse user
+
+CREATE DATABASE user_db;
+CREATE DATABASE feed_db;
+CREATE DATABASE opportunities_db;
+CREATE DATABASE events_db;
+CREATE DATABASE notification_db;
+CREATE DATABASE analytics_db;
+CREATE DATABASE keycloak_db;
+
+-- Grant the perapulse user access to all databases
+GRANT ALL PRIVILEGES ON DATABASE user_db TO perapulse;
+GRANT ALL PRIVILEGES ON DATABASE feed_db TO perapulse;
+GRANT ALL PRIVILEGES ON DATABASE opportunities_db TO perapulse;
+GRANT ALL PRIVILEGES ON DATABASE events_db TO perapulse;
+GRANT ALL PRIVILEGES ON DATABASE notification_db TO perapulse;
+GRANT ALL PRIVILEGES ON DATABASE analytics_db TO perapulse;
+GRANT ALL PRIVILEGES ON DATABASE keycloak_db TO perapulse;

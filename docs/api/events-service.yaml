@@ -1,0 +1,288 @@
+openapi: 3.0.3
+info:
+  title: PeraPulse — Events Service API
+  description: Manages department events and RSVPs.
+  version: 1.0.0
+
+servers:
+  - url: https://{host}/api
+    variables:
+      host:
+        default: localhost:8080
+
+tags:
+  - name: Events
+  - name: RSVPs
+
+paths:
+  /events:
+    post:
+      tags: [Events]
+      summary: Create an event (ALUMNI or ADMIN)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        "201":
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+    get:
+      tags: [Events]
+      summary: List events
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: upcoming
+          in: query
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedEvents'
+
+  /events/{id}:
+    get:
+      tags: [Events]
+      summary: Get event details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Events]
+      summary: Update event (owner or ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        "200":
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+
+    delete:
+      tags: [Events]
+      summary: Delete event (owner or ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+
+  /events/{id}/rsvp:
+    post:
+      tags: [RSVPs]
+      summary: RSVP for an event
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [GOING, NOT_GOING, MAYBE]
+      responses:
+        "200":
+          description: RSVP recorded
+
+  /events/{id}/attendees:
+    get:
+      tags: [RSVPs]
+      summary: Get attendee list (owner or ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Attendees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RSVP'
+
+  /events/me/rsvps:
+    get:
+      tags: [RSVPs]
+      summary: Get my RSVPs
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: My RSVPs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RSVP'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdBySub:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        venue:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        bannerUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateEventRequest:
+      type: object
+      required: [title, startTime]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        venue:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        bannerUrl:
+          type: string
+
+    RSVP:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        userSub:
+          type: string
+        status:
+          type: string
+          enum: [GOING, NOT_GOING, MAYBE]
+        createdAt:
+          type: string
+          format: date-time
+
+    PagedEvents:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        totalElements:
+          type: integer
+        page:
+          type: integer
+        size:
+          type: integer
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT
+    Forbidden:
+      description: Insufficient role
+    NotFound:
+      description: Resource not found

@@ -1,0 +1,343 @@
+openapi: 3.0.3
+info:
+  title: PeraPulse — Opportunities Service API
+  description: Manages job/internship listings and applications.
+  version: 1.0.0
+
+servers:
+  - url: https://{host}/api
+    variables:
+      host:
+        default: localhost:8080
+
+tags:
+  - name: Opportunities
+  - name: Applications
+
+paths:
+  /opportunities:
+    post:
+      tags: [Opportunities]
+      summary: Create a job/internship listing (ALUMNI or ADMIN)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOpportunityRequest'
+      responses:
+        "201":
+          description: Opportunity created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+    get:
+      tags: [Opportunities]
+      summary: List opportunities
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [JOB, INTERNSHIP]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [OPEN, CLOSED]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated opportunities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedOpportunities'
+
+  /opportunities/{id}:
+    get:
+      tags: [Opportunities]
+      summary: Get a single opportunity
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Opportunity detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Opportunities]
+      summary: Update listing (owner or ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOpportunityRequest'
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+
+    delete:
+      tags: [Opportunities]
+      summary: Delete listing (owner or ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+
+  /opportunities/{id}/apply:
+    post:
+      tags: [Applications]
+      summary: Apply for an opportunity (STUDENT)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+      responses:
+        "201":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        "409":
+          description: Already applied
+
+  /opportunities/{id}/applications:
+    get:
+      tags: [Applications]
+      summary: Get applications for a listing (owner or ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Application'
+
+  /applications/me:
+    get:
+      tags: [Applications]
+      summary: Get my submitted applications (STUDENT)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: My applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Application'
+
+  /applications/{appId}/status:
+    put:
+      tags: [Applications]
+      summary: Update application status (listing owner or ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [PENDING, REVIEWED, ACCEPTED, REJECTED]
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Opportunity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdBySub:
+          type: string
+        type:
+          type: string
+          enum: [JOB, INTERNSHIP]
+        title:
+          type: string
+        company:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        deadline:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [OPEN, CLOSED]
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateOpportunityRequest:
+      type: object
+      required: [type, title, company]
+      properties:
+        type:
+          type: string
+          enum: [JOB, INTERNSHIP]
+        title:
+          type: string
+        company:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        deadline:
+          type: string
+          format: date
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        opportunityId:
+          type: string
+          format: uuid
+        applicantSub:
+          type: string
+        coverLetter:
+          type: string
+        resumeUrl:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, REVIEWED, ACCEPTED, REJECTED]
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateApplicationRequest:
+      type: object
+      properties:
+        coverLetter:
+          type: string
+        resumeUrl:
+          type: string
+
+    PagedOpportunities:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Opportunity'
+        totalElements:
+          type: integer
+        page:
+          type: integer
+        size:
+          type: integer
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT
+    Forbidden:
+      description: Insufficient role
+    NotFound:
+      description: Resource not found
