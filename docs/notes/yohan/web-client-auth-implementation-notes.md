@@ -185,4 +185,4 @@ Backend support:
 - add centralized axios response handling for `401` / expired sessions
 - reduce or refine the current diagnostics-heavy landing page
 - replace the temporary static page only after the React flow proves stable over time
-- move from auth test surface toward actual app routes and feature pages
+- move from auth test surface toward actual app routes and feature pages !
