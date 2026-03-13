@@ -20,7 +20,7 @@ public class GatewayRoutesConfig {
 						.filters(filters -> filters.preserveHostHeader())
 						.uri(keycloakInternalUrl))
 				.route("user-service", route -> route
-						.path("/api/users/**")
+						.path("/api/users/**", "/api/profiles/**", "/api/admin/**")
 						.uri(userServiceUrl))
 				.build();
 	}
