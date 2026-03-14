@@ -63,6 +63,7 @@ public class AdminService {
 		String reviewerSub = jwtUserContext.subject(jwt);
 		request.setStatus(RoleRequestStatus.APPROVED);
 		request.setReviewedBySub(reviewerSub);
+		promoteUserProfileRole(request.getUserSub(), UserRole.ALUMNI);
 		return ProfileService.toRoleRequestResponse(roleRequestRepository.save(request));
 	}
 
@@ -82,5 +83,17 @@ public class AdminService {
 			throw new ConflictException("Role request is already " + request.getStatus());
 		}
 		return request;
+	}
+
+	private void promoteUserProfileRole(String userSub, UserRole role) {
+		UserProfile profile = userProfileRepository.findByKeycloakSub(userSub)
+				.orElseGet(() -> {
+					UserProfile created = new UserProfile();
+					created.setKeycloakSub(userSub);
+					created.setRole(UserRole.STUDENT);
+					return created;
+				});
+		profile.setRole(role);
+		userProfileRepository.save(profile);
 	}
 }
