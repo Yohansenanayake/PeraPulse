@@ -117,5 +117,12 @@ class UserServiceApiIntegrationTests {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status", is("APPROVED")))
 				.andExpect(jsonPath("$.reviewedBySub", is("admin-sub")));
+
+		mockMvc.perform(get("/api/admin/users/{sub}", "student-sub-2")
+				.with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")).jwt(jwt -> jwt
+						.subject("admin-sub")
+						.claim("realm_access", Map.of("roles", List.of("ADMIN"))))))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.role", is("ALUMNI")));
 	}
 }
