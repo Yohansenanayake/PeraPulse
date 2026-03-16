@@ -14,7 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U perapulse"]
+      test: [ "CMD-SHELL", "pg_isready -U perapulse" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -62,7 +62,7 @@ services:
       - "9092:9092"
       - "9644:9644"
     healthcheck:
-      test: ["CMD", "rpk", "cluster", "health"]
+      test: [ "CMD", "rpk", "cluster", "health" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -104,13 +104,14 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/feed_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8180/auth/realms/perapulse
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
     ports:
       - "8082:8082"
     depends_on:
       postgres:
+
         condition: service_healthy
       redpanda:
         condition: service_healthy
@@ -207,7 +208,6 @@ services:
         condition: service_started
       user-service:
         condition: service_started
-
   # ─── React Web App ────────────────────────────────────────────
   # Uncomment once the React client is scaffolded
   # react-web:

@@ -96,6 +96,15 @@
         "offline_access",
         "microprofile-jwt"
       ]
+    },
+    {
+      "clientId": "perapulse-api-test",
+      "name": "PeraPulse API Test Client",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "protocol": "openid-connect"
     }
   ],
   "users": [
