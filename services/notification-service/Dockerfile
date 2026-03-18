@@ -10,6 +10,10 @@ COPY src ./src
 RUN ./mvnw -q -DskipTests package
 
 FROM eclipse-temurin:21-jre-alpine
+
+# Install libc6-compat to support Kafka's Snappy decompression (JNI)
+RUN apk add --no-cache libc6-compat
+
 WORKDIR /app
 
 COPY --from=build /workspace/target/*.jar app.jar

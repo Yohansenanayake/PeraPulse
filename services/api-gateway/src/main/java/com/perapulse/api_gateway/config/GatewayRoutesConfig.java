@@ -13,7 +13,8 @@ public class GatewayRoutesConfig {
 	RouteLocator gatewayRoutes(
 			RouteLocatorBuilder builder,
 			@Value("${KEYCLOAK_INTERNAL_URL:http://keycloak:8080}") String keycloakInternalUrl,
-			@Value("${USER_SERVICE_URL:http://localhost:8081}") String userServiceUrl) {
+			@Value("${USER_SERVICE_URL:http://localhost:8081}") String userServiceUrl,
+			@Value("${NOTIFICATION_SERVICE_URL:http://localhost:8085}") String notificationServiceUrl) {
 		return builder.routes()
 				.route("keycloak", route -> route
 						.path("/auth/**")
@@ -22,6 +23,9 @@ public class GatewayRoutesConfig {
 				.route("user-service", route -> route
 						.path("/api/users/**")
 						.uri(userServiceUrl))
+				.route("notification-service", route -> route
+						.path("/api/notifications/**")
+						.uri(notificationServiceUrl))
 				.build();
 	}
 }
