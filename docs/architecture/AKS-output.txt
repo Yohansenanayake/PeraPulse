@@ -1,0 +1,242 @@
+base) yohan@yohan-ThinkPad-T460p:~/CO528/PeraPulse$ az aks create \
+  --resource-group $RESOURCE_GROUP \
+  --name $AKS_CLUSTER \
+  --node-count 2 \
+  --node-vm-size standard_b2als_v2 \
+  --attach-acr $ACR_NAME \
+  --generate-ssh-keys
+AAD role propagation done[############################################]  100.0000%{
+  "aadProfile": null,
+  "addonProfiles": null,
+  "agentPoolProfiles": [
+    {
+      "availabilityZones": null,
+      "capacityReservationGroupId": null,
+      "count": 2,
+      "creationData": null,
+      "currentOrchestratorVersion": "1.33.6",
+      "eTag": "46da07dd-0434-4924-9693-a3d4f23215ba",
+      "enableAutoScaling": false,
+      "enableEncryptionAtHost": false,
+      "enableFips": false,
+      "enableNodePublicIp": false,
+      "enableUltraSsd": false,
+      "gatewayProfile": null,
+      "gpuInstanceProfile": null,
+      "gpuProfile": null,
+      "hostGroupId": null,
+      "kubeletConfig": null,
+      "kubeletDiskType": "OS",
+      "linuxOsConfig": null,
+      "localDnsProfile": null,
+      "maxCount": null,
+      "maxPods": 250,
+      "messageOfTheDay": null,
+      "minCount": null,
+      "mode": "System",
+      "name": "nodepool1",
+      "networkProfile": null,
+      "nodeImageVersion": "AKSUbuntu-2204gen2containerd-202602.13.5",
+      "nodeLabels": null,
+      "nodePublicIpPrefixId": null,
+      "nodeTaints": null,
+      "orchestratorVersion": "1.33",
+      "osDiskSizeGb": 128,
+      "osDiskType": "Managed",
+      "osSku": "Ubuntu",
+      "osType": "Linux",
+      "podIpAllocationMode": null,
+      "podSubnetId": null,
+      "powerState": {
+        "code": "Running"
+      },
+      "provisioningState": "Succeeded",
+      "proximityPlacementGroupId": null,
+      "scaleDownMode": "Delete",
+      "scaleSetEvictionPolicy": null,
+      "scaleSetPriority": null,
+      "securityProfile": {
+        "enableSecureBoot": false,
+        "enableVtpm": false,
+        "sshAccess": null
+      },
+      "spotMaxPrice": null,
+      "status": null,
+      "tags": null,
+      "type": "VirtualMachineScaleSets",
+      "upgradeSettings": {
+        "drainTimeoutInMinutes": null,
+        "maxSurge": "10%",
+        "maxUnavailable": "0",
+        "nodeSoakDurationInMinutes": null,
+        "undrainableNodeBehavior": null
+      },
+      "virtualMachineNodesStatus": null,
+      "virtualMachinesProfile": null,
+      "vmSize": "standard_b2als_v2",
+      "vnetSubnetId": null,
+      "windowsProfile": null,
+      "workloadRuntime": null
+    }
+  ],
+  "aiToolchainOperatorProfile": null,
+  "apiServerAccessProfile": null,
+  "autoScalerProfile": null,
+  "autoUpgradeProfile": {
+    "nodeOsUpgradeChannel": "NodeImage",
+    "upgradeChannel": null
+  },
+  "azureMonitorProfile": null,
+  "azurePortalFqdn": "perapulse--perapulse-rg-5bf801-gm671a7t.portal.hcp.southeastasia.azmk8s.io",
+  "bootstrapProfile": {
+    "artifactSource": "Direct",
+    "containerRegistryId": null
+  },
+  "currentKubernetesVersion": "1.33.6",
+  "disableLocalAccounts": false,
+  "diskEncryptionSetId": null,
+  "dnsPrefix": "perapulse--perapulse-rg-5bf801",
+  "eTag": "f9fa65dc-eda3-4070-ab1f-a37043971f8a",
+  "enableRbac": true,
+  "extendedLocation": null,
+  "fqdn": "perapulse--perapulse-rg-5bf801-gm671a7t.hcp.southeastasia.azmk8s.io",
+  "fqdnSubdomain": null,
+  "httpProxyConfig": null,
+  "id": "/subscriptions/5bf801e8-ca91-44cf-ab17-f583b87bea71/resourcegroups/perapulse-rg/providers/Microsoft.ContainerService/managedClusters/perapulse-aks",
+  "identity": {
+    "delegatedResources": null,
+    "principalId": "1a6dc7f3-1848-4a50-83b1-bec9b48d195c",
+    "tenantId": "89183d41-60d9-44dc-92dd-3ec0d2428b1e",
+    "type": "SystemAssigned",
+    "userAssignedIdentities": null
+  },
+  "identityProfile": {
+    "kubeletidentity": {
+      "clientId": "510468eb-92a9-417d-bd11-144bd82de64d",
+      "objectId": "a95fcb32-a75a-4874-b054-547fd4e7d728",
+      "resourceId": "/subscriptions/5bf801e8-ca91-44cf-ab17-f583b87bea71/resourcegroups/MC_perapulse-rg_perapulse-aks_southeastasia/providers/Microsoft.ManagedIdentity/userAssignedIdentities/perapulse-aks-agentpool"
+    }
+  },
+  "ingressProfile": null,
+  "kind": "Base",
+  "kubernetesVersion": "1.33",
+  "linuxProfile": {
+    "adminUsername": "azureuser",
+    "ssh": {
+      "publicKeys": [
+        {
+          "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCWS0fASwie4nXMrSElFBTU1hZdnQKZqMbNsWoaj2WG6Tw7+KeIOBr5L9STrLMW92vgfQVrC5tbtAlWvGjTyw5qsy0V2hzVP4h/7MGv9R/H8vQ+/nbWA35ZVQPhtiVPQjqOc2gH+GTDPQpWz6nTnRHrVOdBzgok0JWDvHNxERPPIbkTtN/JM/wK0ZzOjGixiTGb12vGqLc/oaoZwpHBZoljBqjGKcin+QpqSkRG0xtowaCnolSt9BSw9PQyfh3f49Myp3uEcIDUuAQSaRVwpC0zbqMP+eZ7xV5+ad+fvRMvwfAzASVFAQ0jMU92XDa0nnmF8ZXBrtiSCpjIqah28/rGZoVSXSbGrHMT1GoM+hnRmF51HTFIaWF5TkSTeeu5wlrUYcjK+9AN1yTCCAf6GiYs47zy9WB/yQghweq4XT+lBiCyQEy6ZELYCI/tcSneJfDw066AcKyC36QF0Kmj3bcKkVFjfxcbFjfKAhU2pFO86T/4qSrnYf9GaBTkbsEm6Sc= yohan@yohan-ThinkPad-T460p\n"
+        }
+      ]
+    }
+  },
+  "location": "southeastasia",
+  "maxAgentPools": 100,
+  "metricsProfile": {
+    "costAnalysis": {
+      "enabled": false
+    }
+  },
+  "name": "perapulse-aks",
+  "networkProfile": {
+    "advancedNetworking": null,
+    "dnsServiceIp": "10.0.0.10",
+    "ipFamilies": [
+      "IPv4"
+    ],
+    "loadBalancerProfile": {
+      "allocatedOutboundPorts": null,
+      "backendPoolType": "nodeIPConfiguration",
+      "effectiveOutboundIPs": [
+        {
+          "id": "/subscriptions/5bf801e8-ca91-44cf-ab17-f583b87bea71/resourceGroups/MC_perapulse-rg_perapulse-aks_southeastasia/providers/Microsoft.Network/publicIPAddresses/cfa68876-5ab9-4c95-8049-06da25f08fd1",
+          "resourceGroup": "MC_perapulse-rg_perapulse-aks_southeastasia"
+        }
+      ],
+      "enableMultipleStandardLoadBalancers": null,
+      "idleTimeoutInMinutes": null,
+      "managedOutboundIPs": {
+        "count": 1,
+        "countIpv6": null
+      },
+      "outboundIPs": null,
+      "outboundIpPrefixes": null
+    },
+    "loadBalancerSku": "standard",
+    "natGatewayProfile": null,
+    "networkDataplane": "azure",
+    "networkMode": null,
+    "networkPlugin": "azure",
+    "networkPluginMode": "overlay",
+    "networkPolicy": "none",
+    "outboundType": "loadBalancer",
+    "podCidr": "10.244.0.0/16",
+    "podCidrs": [
+      "10.244.0.0/16"
+    ],
+    "serviceCidr": "10.0.0.0/16",
+    "serviceCidrs": [
+      "10.0.0.0/16"
+    ],
+    "staticEgressGatewayProfile": null
+  },
+  "nodeProvisioningProfile": {
+    "defaultNodePools": "Auto",
+    "mode": "Manual"
+  },
+  "nodeResourceGroup": "MC_perapulse-rg_perapulse-aks_southeastasia",
+  "nodeResourceGroupProfile": null,
+  "oidcIssuerProfile": {
+    "enabled": false,
+    "issuerUrl": null
+  },
+  "podIdentityProfile": null,
+  "powerState": {
+    "code": "Running"
+  },
+  "privateFqdn": null,
+  "privateLinkResources": null,
+  "provisioningState": "Succeeded",
+  "publicNetworkAccess": null,
+  "resourceGroup": "perapulse-rg",
+  "resourceUid": "69b9b6ae59a9840001da4270",
+  "securityProfile": {
+    "azureKeyVaultKms": null,
+    "customCaTrustCertificates": null,
+    "defender": null,
+    "imageCleaner": null,
+    "workloadIdentity": null
+  },
+  "serviceMeshProfile": null,
+  "servicePrincipalProfile": {
+    "clientId": "msi",
+    "secret": null
+  },
+  "sku": {
+    "name": "Base",
+    "tier": "Free"
+  },
+  "status": null,
+  "storageProfile": {
+    "blobCsiDriver": null,
+    "diskCsiDriver": {
+      "enabled": true
+    },
+    "fileCsiDriver": {
+      "enabled": true
+    },
+    "snapshotController": {
+      "enabled": true
+    }
+  },
+  "supportPlan": "KubernetesOfficial",
+  "systemData": null,
+  "tags": null,
+  "type": "Microsoft.ContainerService/ManagedClusters",
+  "upgradeSettings": null,
+  "windowsProfile": null,
+  "workloadAutoScalerProfile": {
+    "keda": null,
+    "verticalPodAutoscaler": null
+  }
+}
