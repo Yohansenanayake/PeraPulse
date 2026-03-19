@@ -1,49 +1,189 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { GraduationCap, ChevronRight } from "lucide-react";
-import { profilesApi } from "@/api/profiles";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Clock3,
+  GraduationCap,
+  RefreshCcw,
+  XCircle,
+} from "lucide-react";
+
+import { getErrorMessage } from "@/api/http-client";
+import { ErrorState } from "@/components/shared/error-state";
+import { LoadingSkeleton } from "@/components/shared/loading-skeleton";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
+import {
+  useMyProfile,
+  useSubmitRoleRequest,
+} from "@/features/user-service/use-user-service";
+
+const LOCAL_STORAGE_PREFIX = "perapulse.role-request";
+
+function getStorageKey(userSub) {
+  return `${LOCAL_STORAGE_PREFIX}.${userSub}`;
+}
+
+function readStoredRequest(userSub) {
+  if (!userSub) return null;
+
+  try {
+    const raw = window.localStorage.getItem(getStorageKey(userSub));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredRequest(userSub, request) {
+  if (!userSub || !request) return;
+  window.localStorage.setItem(getStorageKey(userSub), JSON.stringify(request));
+}
+
+function clearStoredRequest(userSub) {
+  if (!userSub) return;
+  window.localStorage.removeItem(getStorageKey(userSub));
+}
 
 export function RoleRequestPage() {
+  const { data: profile, isLoading, isError, error, refetch } = useMyProfile();
   const [form, setForm] = useState({ graduationYear: "", evidenceText: "" });
-  const [submitted, setSubmitted] = useState(false);
+  const [localRequest, setLocalRequest] = useState(null);
+  const [conflictMessage, setConflictMessage] = useState("");
 
-  const mutation = useMutation({
-    mutationFn: () => profilesApi.submitRoleRequest({ ...form, graduationYear: parseInt(form.graduationYear) }),
-    onSuccess: () => setSubmitted(true),
+  useEffect(() => {
+    if (!profile?.keycloakSub) return;
+    setLocalRequest(readStoredRequest(profile.keycloakSub));
+  }, [profile?.keycloakSub]);
+
+  useEffect(() => {
+    if (!profile?.keycloakSub) return;
+
+    if (profile.role === "ALUMNI" || profile.role === "ADMIN") {
+      clearStoredRequest(profile.keycloakSub);
+      setLocalRequest(null);
+      setConflictMessage("");
+    }
+  }, [profile?.keycloakSub, profile?.role]);
+
+  const submitRoleRequest = useSubmitRoleRequest({
+    onSuccess: (request) => {
+      if (profile?.keycloakSub) {
+        writeStoredRequest(profile.keycloakSub, request);
+      }
+      setLocalRequest(request);
+      setConflictMessage("");
+    },
+    onError: (submitError) => {
+      if (submitError?.status === 409) {
+        setConflictMessage(
+          getErrorMessage(
+            submitError,
+            "You already have a pending alumni role request."
+          )
+        );
+      }
+    },
   });
 
-  if (submitted) {
+  const currentStatus = useMemo(() => {
+    if (profile?.role === "ALUMNI" || profile?.role === "ADMIN") {
+      return "APPROVED";
+    }
+
+    if (localRequest?.status) {
+      return localRequest.status;
+    }
+
+    if (conflictMessage) {
+      return "PENDING";
+    }
+
+    return "NONE";
+  }, [conflictMessage, localRequest?.status, profile?.role]);
+
+  const disableSubmit = currentStatus === "PENDING";
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    setConflictMessage("");
+
+    submitRoleRequest.mutate({
+      graduationYear: Number(form.graduationYear),
+      evidenceText: form.evidenceText.trim() || null,
+    });
+  };
+
+  if (isLoading) {
     return (
-      <div className="max-w-xl mx-auto rounded-2xl border border-emerald-300/60 bg-emerald-50 p-10 text-center shadow-sm">
-        <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-emerald-100 mx-auto">
-          <ChevronRight className="size-7 text-emerald-600" />
-        </div>
-        <h2 className="text-lg font-bold text-foreground">Request Submitted!</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          An admin will review your alumni upgrade request. You'll receive a notification once a decision is made.
-          After approval, please log out and log back in for your new role to take effect.
-        </p>
+      <div className="mx-auto max-w-xl">
+        <LoadingSkeleton count={1} />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-xl">
+        <ErrorState
+          message={getErrorMessage(
+            error,
+            "Unable to load your profile details."
+          )}
+          onRetry={refetch}
+        />
       </div>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto">
+    <div className="mx-auto max-w-xl space-y-6">
       <PageHeader
         title="Request Alumni Status"
-        subtitle="Submit your graduation details to request an upgrade to Alumni role"
+        subtitle="Submit your graduation details to request an upgrade from Student to Alumni."
       />
 
-      <div className="mb-6 rounded-2xl border border-amber-300/60 bg-amber-50/60 p-4 text-sm text-amber-800">
-        <p className="font-semibold mb-1">⚠️ After approval</p>
-        <p>You must log out and log back in for your new Alumni role JWT to be issued by Keycloak.</p>
+      <div className="rounded-2xl border border-amber-300/60 bg-amber-50/60 p-4 text-sm text-amber-800">
+        <p className="mb-1 font-semibold">After approval</p>
+        <p>
+          You must log out and log back in so Keycloak can issue a new token
+          with your updated role.
+        </p>
       </div>
 
+      {currentStatus === "APPROVED" ? (
+        <StatusCard
+          icon={RefreshCcw}
+          title="Your profile has already been upgraded"
+          description="Your user-service profile already shows Alumni access. Refresh your session by logging out and back in to receive the new JWT role."
+          tone="success"
+        />
+      ) : null}
+
+      {currentStatus === "PENDING" ? (
+        <StatusCard
+          icon={Clock3}
+          title="Your alumni request is pending review"
+          description={
+            localRequest?.graduationYear
+              ? `Graduation year submitted: ${localRequest.graduationYear}. An admin still needs to review the request.`
+              : conflictMessage ||
+                "An admin still needs to review your existing request."
+          }
+          tone="warning"
+        />
+      ) : null}
+
+      {currentStatus === "REJECTED" ? (
+        <StatusCard
+          icon={XCircle}
+          title="Your previous request was rejected"
+          description="You can submit a new request with clearer evidence or corrected graduation details."
+          tone="danger"
+        />
+      ) : null}
+
       <form
-        onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}
-        className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4"
+        onSubmit={handleSubmit}
+        className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
       >
         <div className="space-y-1.5">
           <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -52,34 +192,95 @@ export function RoleRequestPage() {
           <input
             required
             type="number"
-            min={1990}
-            max={new Date().getFullYear()}
+            min={1950}
+            max={2100}
             value={form.graduationYear}
-            onChange={(e) => setForm((f) => ({ ...f, graduationYear: e.target.value }))}
-            placeholder="e.g. 2024"
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                graduationYear: event.target.value,
+              }))
+            }
+            placeholder="2024"
             className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            disabled={
+              disableSubmit ||
+              submitRoleRequest.isPending ||
+              currentStatus === "APPROVED"
+            }
           />
         </div>
+
         <div className="space-y-1.5">
           <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Supporting Evidence (optional)
           </label>
           <textarea
             value={form.evidenceText}
-            onChange={(e) => setForm((f) => ({ ...f, evidenceText: e.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                evidenceText: event.target.value,
+              }))
+            }
             rows={4}
-            placeholder="LinkedIn profile, degree certificate URL, or any other evidence…"
+            placeholder="LinkedIn profile, a graduation note, or another short proof."
             className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            disabled={
+              disableSubmit ||
+              submitRoleRequest.isPending ||
+              currentStatus === "APPROVED"
+            }
           />
         </div>
 
-        {mutation.isError && <p className="text-sm text-destructive">Submission failed. Please try again.</p>}
+        {submitRoleRequest.isError ? (
+          <p className="text-sm text-destructive">
+            {conflictMessage ||
+              getErrorMessage(
+                submitRoleRequest.error,
+                "We couldn't submit your request."
+              )}
+          </p>
+        ) : null}
 
-        <Button type="submit" className="w-full gap-1.5" disabled={mutation.isPending}>
+        {currentStatus === "REJECTED" ? (
+          <p className="text-sm text-muted-foreground">
+            You can update the form and submit again when you are ready.
+          </p>
+        ) : null}
+
+        <Button
+          type="submit"
+          className="w-full gap-1.5"
+          disabled={
+            disableSubmit ||
+            submitRoleRequest.isPending ||
+            currentStatus === "APPROVED"
+          }
+        >
           <GraduationCap className="size-4" />
-          {mutation.isPending ? "Submitting…" : "Submit Request"}
+          {submitRoleRequest.isPending ? "Submitting..." : "Submit Request"}
         </Button>
       </form>
+    </div>
+  );
+}
+
+function StatusCard({ icon: Icon, title, description, tone }) {
+  const tones = {
+    success: "border-emerald-300/60 bg-emerald-50 text-emerald-800",
+    warning: "border-amber-300/60 bg-amber-50 text-amber-800",
+    danger: "border-red-300/60 bg-red-50 text-red-800",
+  };
+
+  return (
+    <div className={`rounded-2xl border p-5 shadow-sm ${tones[tone]}`}>
+      <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-white/60">
+        <Icon className="size-6" />
+      </div>
+      <h2 className="text-base font-semibold">{title}</h2>
+      <p className="mt-2 text-sm leading-6">{description}</p>
     </div>
   );
 }

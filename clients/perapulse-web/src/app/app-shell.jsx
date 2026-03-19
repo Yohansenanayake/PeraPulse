@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Menu } from "lucide-react";
 
@@ -20,12 +20,14 @@ import { EventDetailPage } from "@/features/events/event-detail-page";
 import { CreateEventPage } from "@/features/events/create-event-page";
 import { MyRsvpsPage } from "@/features/events/my-rsvps-page";
 import { NotificationsPage } from "@/features/notifications/notifications-page";
+import { PeoplePage } from "@/features/people/people-page";
 import { ProfilePage } from "@/features/profile/profile-page";
 import { EditProfilePage } from "@/features/profile/edit-profile-page";
 import { RoleRequestPage } from "@/features/profile/role-request-page";
 import { AdminDashboardPage } from "@/features/admin/admin-dashboard-page";
 import { UserManagementPage } from "@/features/admin/user-management-page";
 import { AdminRoleRequestsPage } from "@/features/admin/admin-role-requests-page";
+import { AdminUserDetailPage } from "@/features/admin/admin-user-detail-page";
 
 export function AppShell() {
   const { auth, ready } = useAuthState();
@@ -93,6 +95,7 @@ export function AppShell() {
             <Route path="/events/me/rsvps" element={<AuthGuard><MyRsvpsPage /></AuthGuard>} />
             <Route path="/events/:id" element={<AuthGuard><EventDetailPage /></AuthGuard>} />
 
+            <Route path="/people" element={<AuthGuard><PeoplePage /></AuthGuard>} />
             <Route path="/notifications" element={<AuthGuard><NotificationsPage /></AuthGuard>} />
 
             <Route path="/profile/me" element={<AuthGuard><EditProfilePage /></AuthGuard>} />
@@ -101,6 +104,7 @@ export function AppShell() {
 
             <Route path="/admin" element={<AuthGuard roles={["ADMIN"]}><AdminDashboardPage /></AuthGuard>} />
             <Route path="/admin/users" element={<AuthGuard roles={["ADMIN"]}><UserManagementPage /></AuthGuard>} />
+            <Route path="/admin/users/:sub" element={<AuthGuard roles={["ADMIN"]}><AdminUserDetailPage /></AuthGuard>} />
             <Route path="/admin/role-requests" element={<AuthGuard roles={["ADMIN"]}><AdminRoleRequestsPage /></AuthGuard>} />
 
             <Route path="*" element={<Navigate to="/feed" replace />} />

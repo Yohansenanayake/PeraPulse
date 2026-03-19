@@ -78,3 +78,10 @@ export async function deleteJson(path, config = {}) {
   }
 }
 
+export function getErrorMessage(
+  error,
+  fallback = "Something went wrong. Please try again."
+) {
+  return error?.data?.message || error?.message || fallback;
+}
+
