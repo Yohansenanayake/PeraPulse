@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: perapulse-ingress
+  namespace: perapulse
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
+    # Increase timeout for Keycloak token exchanges
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    # Allow same-origin iframes (required for Keycloak admin console 3rd-party cookie check)
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_hide_header X-Frame-Options;
+      add_header X-Frame-Options "SAMEORIGIN";
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.perapulse.org
+      secretName: cloudflare-origin-cert
+  rules:
+    - host: api.perapulse.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8080

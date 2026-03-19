@@ -1,142 +1,116 @@
-import { ShieldCheck, SatelliteDish, Sparkles } from "lucide-react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Menu } from "lucide-react";
 
 import { useAuthState } from "@/auth/use-auth-state";
-import { Button } from "@/components/ui/button";
+import { useUiStore } from "@/store/ui-store";
+import { Sidebar } from "@/components/layout/sidebar";
+import { AuthGuard } from "@/components/shared/auth-guard";
+
+// Feature pages — lazy-ish inline imports for code clarity
 import { LandingPage } from "@/features/home/landing-page";
+import { FeedPage } from "@/features/feed/feed-page";
+import { OpportunitiesPage } from "@/features/opportunities/opportunities-page";
+import { OpportunityDetailPage } from "@/features/opportunities/opportunity-detail-page";
+import { CreateOpportunityPage } from "@/features/opportunities/create-opportunity-page";
+import { ApplicationsManagementPage } from "@/features/opportunities/applications-management-page";
+import { MyApplicationsPage } from "@/features/opportunities/my-applications-page";
+import { EventsPage } from "@/features/events/events-page";
+import { EventDetailPage } from "@/features/events/event-detail-page";
+import { CreateEventPage } from "@/features/events/create-event-page";
+import { MyRsvpsPage } from "@/features/events/my-rsvps-page";
+import { NotificationsPage } from "@/features/notifications/notifications-page";
+import { PeoplePage } from "@/features/people/people-page";
+import { ProfilePage } from "@/features/profile/profile-page";
+import { EditProfilePage } from "@/features/profile/edit-profile-page";
+import { RoleRequestPage } from "@/features/profile/role-request-page";
+import { AdminDashboardPage } from "@/features/admin/admin-dashboard-page";
+import { UserManagementPage } from "@/features/admin/user-management-page";
+import { AdminRoleRequestsPage } from "@/features/admin/admin-role-requests-page";
+import { AdminUserDetailPage } from "@/features/admin/admin-user-detail-page";
 
 export function AppShell() {
-  const { auth, login, logout, ready, userLabel } = useAuthState();
+  const { auth, ready } = useAuthState();
+  const { sidebarOpen, setSidebarOpen } = useUiStore();
 
-  return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(202,138,4,0.18),_transparent_30%),linear-gradient(180deg,_#f6f0df_0%,_#f7f4ed_48%,_#fbfaf6_100%)] text-foreground">
-      <header className="border-b border-border/60 bg-background/70 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-              <Sparkles className="size-5" />
-            </div>
-            <div>
-              <p className="text-lg font-semibold tracking-tight">PeraPulse</p>
-              <p className="text-sm text-muted-foreground">
-                Department engagement platform
-              </p>
-            </div>
-          </div>
+  // Default sidebar open on desktop
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    setSidebarOpen(mq.matches);
+    const handler = (e) => setSidebarOpen(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [setSidebarOpen]);
 
-          <div className="flex items-center gap-3">
-            <div className="hidden rounded-full border border-border bg-background/80 px-3 py-1.5 text-sm text-muted-foreground sm:block">
-              {ready
-                ? auth.isAuthenticated
-                  ? `Signed in as ${userLabel}`
-                  : "Not signed in"
-                : "Checking session..."}
-            </div>
-            {auth.isAuthenticated ? (
-              <Button variant="outline" onClick={logout}>
-                Log out
-              </Button>
-            ) : (
-              <Button onClick={login}>Sign in</Button>
-            )}
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-6 py-10 md:py-14">
-        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-6 rounded-[2rem] border border-border/70 bg-card/90 p-8 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.35)]">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-100/70 px-3 py-1 text-sm text-amber-900">
-              <ShieldCheck className="size-4" />
-              React web client auth slice
-            </div>
-
-            <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-                Replace the temporary test page with a real frontend without
-                changing the security model.
-              </h1>
-              <p className="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                This React client keeps the same Keycloak, gateway, and
-                downstream JWT validation flow you already proved. The next step
-                is making the browser experience feel like the real product.
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <InfoCard
-                icon={ShieldCheck}
-                title="Access token only"
-                description="Browser to gateway and gateway to services both use the same access token."
-              />
-              <InfoCard
-                icon={SatelliteDish}
-                title="Gateway first"
-                description="Browser-facing auth and API traffic still enter through the gateway path."
-              />
-              <InfoCard
-                icon={Sparkles}
-                title="React native flow"
-                description="The temp page can stay as a fallback while this app takes over the login flow."
-              />
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-border/70 bg-background/85 p-6 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.4)]">
-            <p className="text-sm font-medium uppercase tracking-[0.22em] text-muted-foreground">
-              Current session
-            </p>
-            <div className="mt-4 space-y-4">
-              <StatusRow
-                label="Auth state"
-                value={
-                  ready
-                    ? auth.isAuthenticated
-                      ? "Authenticated"
-                      : "Anonymous"
-                    : "Resolving"
-                }
-              />
-              <StatusRow label="Client" value="React + Vite" />
-              <StatusRow
-                label="Authority"
-                value={import.meta.env.VITE_OIDC_AUTHORITY ??
-                  "http://localhost:8080/auth/realms/perapulse"}
-              />
-              <StatusRow
-                label="API base"
-                value={import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080"}
-              />
-            </div>
-          </div>
-        </section>
-
-        <LandingPage />
-      </main>
-    </div>
-  );
-}
-
-function InfoCard({ icon: Icon, title, description }) {
-  return (
-    <div className="rounded-3xl border border-border/70 bg-background/75 p-4">
-      <div className="mb-4 inline-flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-        <Icon className="size-5" />
+  if (!ready) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
-      <h2 className="text-base font-semibold">{title}</h2>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        {description}
-      </p>
-    </div>
-  );
-}
+    );
+  }
 
-function StatusRow({ label, value }) {
+  // Unauthenticated: only show landing
+  if (!auth.isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="*" element={<LandingPage />} />
+      </Routes>
+    );
+  }
+
+  // Authenticated: full app layout
   return (
-    <div className="rounded-2xl border border-border/70 bg-card px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 break-all text-sm font-medium">{value}</p>
+    <div className="flex h-screen overflow-hidden bg-background">
+      <Sidebar />
+
+      {/* Main content area */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Mobile top bar */}
+        <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 md:hidden">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"
+          >
+            <Menu className="size-5" />
+          </button>
+          <span className="text-sm font-semibold">PeraPulse</span>
+        </header>
+
+        {/* Page router */}
+        <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8">
+          <Routes>
+            <Route path="/" element={<Navigate to="/feed" replace />} />
+
+            <Route path="/feed" element={<AuthGuard><FeedPage /></AuthGuard>} />
+
+            <Route path="/opportunities" element={<AuthGuard><OpportunitiesPage /></AuthGuard>} />
+            <Route path="/opportunities/create" element={<AuthGuard roles={["ALUMNI","ADMIN"]}><CreateOpportunityPage /></AuthGuard>} />
+            <Route path="/opportunities/:id" element={<AuthGuard><OpportunityDetailPage /></AuthGuard>} />
+            <Route path="/opportunities/:id/applications" element={<AuthGuard roles={["ALUMNI","ADMIN"]}><ApplicationsManagementPage /></AuthGuard>} />
+            <Route path="/applications/me" element={<AuthGuard><MyApplicationsPage /></AuthGuard>} />
+
+            <Route path="/events" element={<AuthGuard><EventsPage /></AuthGuard>} />
+            <Route path="/events/create" element={<AuthGuard roles={["ALUMNI","ADMIN"]}><CreateEventPage /></AuthGuard>} />
+            <Route path="/events/me/rsvps" element={<AuthGuard><MyRsvpsPage /></AuthGuard>} />
+            <Route path="/events/:id" element={<AuthGuard><EventDetailPage /></AuthGuard>} />
+
+            <Route path="/people" element={<AuthGuard><PeoplePage /></AuthGuard>} />
+            <Route path="/notifications" element={<AuthGuard><NotificationsPage /></AuthGuard>} />
+
+            <Route path="/profile/me" element={<AuthGuard><EditProfilePage /></AuthGuard>} />
+            <Route path="/profile/role-request" element={<AuthGuard roles={["STUDENT"]}><RoleRequestPage /></AuthGuard>} />
+            <Route path="/profile/:sub" element={<AuthGuard><ProfilePage /></AuthGuard>} />
+
+            <Route path="/admin" element={<AuthGuard roles={["ADMIN"]}><AdminDashboardPage /></AuthGuard>} />
+            <Route path="/admin/users" element={<AuthGuard roles={["ADMIN"]}><UserManagementPage /></AuthGuard>} />
+            <Route path="/admin/users/:sub" element={<AuthGuard roles={["ADMIN"]}><AdminUserDetailPage /></AuthGuard>} />
+            <Route path="/admin/role-requests" element={<AuthGuard roles={["ADMIN"]}><AdminRoleRequestsPage /></AuthGuard>} />
+
+            <Route path="*" element={<Navigate to="/feed" replace />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 }
