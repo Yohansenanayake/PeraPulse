@@ -56,6 +56,13 @@ export function useAuthState() {
   const isAdmin = roles.has("ADMIN");
   const isAlumni = roles.has("ALUMNI");
   const isStudent = roles.has("STUDENT");
+  const primaryRole = isAdmin
+    ? "ADMIN"
+    : isAlumni
+    ? "ALUMNI"
+    : isStudent
+    ? "STUDENT"
+    : null;
 
   return {
     auth,
@@ -66,6 +73,7 @@ export function useAuthState() {
     isAdmin,
     isAlumni,
     isStudent,
+    primaryRole,
     login: () => {
       sessionStorage.setItem(
         "perapulse.post_login_path",

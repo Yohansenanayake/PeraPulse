@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Newspaper,
@@ -34,18 +34,22 @@ const ADMIN_ITEMS = [
 ];
 
 export function Sidebar() {
-  const { userLabel, isAdmin, isAlumni, isStudent, logout } = useAuthState();
+  const { userLabel, isAdmin, primaryRole, logout } = useAuthState();
   const { sidebarOpen, setSidebarOpen, notifUnreadCount, darkMode, toggleDarkMode } =
     useUiStore();
-  const navigate = useNavigate();
 
   if (!sidebarOpen) return null;
 
-  const roleBadge = isAdmin
-    ? { label: "Admin", color: "bg-red-500/15 text-red-600" }
-    : isAlumni
-    ? { label: "Alumni", color: "bg-amber-500/15 text-amber-700" }
-    : { label: "Student", color: "bg-primary/15 text-primary" };
+  const roleBadge =
+    primaryRole === "ADMIN"
+      ? { label: "Admin", color: "bg-red-500/15 text-red-600" }
+      : primaryRole === "ALUMNI"
+      ? { label: "Alumni", color: "bg-amber-500/15 text-amber-700" }
+      : { label: "Student", color: "bg-primary/15 text-primary" };
+
+  const showCreateSection =
+    primaryRole === "ALUMNI" || primaryRole === "ADMIN";
+  const showStudentQuickLinks = primaryRole === "STUDENT";
 
   return (
     <>
@@ -89,7 +93,7 @@ export function Sidebar() {
           </div>
 
           {/* Alumni quick-links */}
-          {(isAlumni || isAdmin) && (
+          {showCreateSection && (
             <div className="mt-5">
               <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
                 Create
@@ -102,7 +106,7 @@ export function Sidebar() {
           )}
 
           {/* Student quick-links */}
-          {isStudent && (
+          {showStudentQuickLinks && (
             <div className="mt-5">
               <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
                 My

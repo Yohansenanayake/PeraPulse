@@ -66,8 +66,7 @@ export function PeoplePage() {
         </form>
 
         <div className="mt-4 rounded-xl border border-dashed border-border px-4 py-4 text-sm text-muted-foreground">
-          This frontend-only search does a direct lookup with <code>/api/profiles/{`{sub}`}</code>.
-          It does not support partial matches or suggestions.
+          Search other people using their usernames or email address.
         </div>
       </div>
 
