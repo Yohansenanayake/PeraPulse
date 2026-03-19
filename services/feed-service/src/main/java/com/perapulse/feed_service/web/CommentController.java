@@ -30,13 +30,21 @@ public class CommentController {
 
     private final CommentService commentService;
 
+    private String resolveSub(Jwt jwt) {
+        String sub = jwt.getSubject();
+        if (sub != null) return sub;
+        String username = jwt.getClaimAsString("preferred_username");
+        if (username != null) return username;
+        return "unknown";
+    }
+
     @PostMapping
     public ResponseEntity<CommentResponse> addComment(
             @PathVariable UUID postId,
             @Valid @RequestBody CreateCommentRequest req,
             @AuthenticationPrincipal Jwt jwt) {
 
-        Comment c = commentService.addComment(postId, jwt.getSubject(), req);
+        Comment c = commentService.addComment(postId, resolveSub(jwt), req);
         CommentResponse resp = new CommentResponse(
                 c.getId(), c.getAuthorSub(), null, c.getText(), c.getCreatedAt());
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);

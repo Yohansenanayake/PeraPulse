@@ -1,179 +1,146 @@
-import { useState } from "react";
-import { LockKeyhole, Network, UserRoundCheck } from "lucide-react";
-
-import { getJson } from "@/api/http-client";
-import { useAuthState } from "@/auth/use-auth-state";
+import { useNavigate } from "react-router-dom";
+import {
+  Sparkles,
+  Newspaper,
+  Briefcase,
+  CalendarDays,
+  Bell,
+  ShieldCheck,
+  ArrowRight,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuthState } from "@/auth/use-auth-state";
+
+const FEATURES = [
+  {
+    icon: Newspaper,
+    color: "text-indigo-500",
+    bg: "bg-indigo-50",
+    title: "Social Feed",
+    desc: "Share updates, post announcements, and engage with your department community.",
+  },
+  {
+    icon: Briefcase,
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    title: "Jobs & Internships",
+    desc: "Alumni post opportunities; students apply and track their applications.",
+  },
+  {
+    icon: CalendarDays,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+    title: "Events & RSVPs",
+    desc: "Discover department workshops, seminars, and networking events.",
+  },
+  {
+    icon: Bell,
+    color: "text-purple-600",
+    bg: "bg-purple-50",
+    title: "Notifications",
+    desc: "Real-time alerts for likes, comments, applications, and new opportunities.",
+  },
+  {
+    icon: Users,
+    color: "text-rose-600",
+    bg: "bg-rose-50",
+    title: "Alumni Network",
+    desc: "Connect with graduates, request Alumni status, and grow your professional network.",
+  },
+  {
+    icon: ShieldCheck,
+    color: "text-sky-600",
+    bg: "bg-sky-50",
+    title: "Secure & Role-based",
+    desc: "Keycloak OIDC authentication with fine-grained student / alumni / admin access control.",
+  },
+];
 
 export function LandingPage() {
-  const { auth, accessToken, login, logout, ready, userLabel } = useAuthState();
-  const [apiResult, setApiResult] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  async function handlePublicCall() {
-    setIsLoading(true);
-    try {
-      const result = await getJson("/api/users/public-info");
-      setApiResult({ status: "success", title: "Public endpoint", payload: result });
-    } catch (error) {
-      setApiResult({
-        status: "error",
-        title: "Public endpoint",
-        payload: formatError(error),
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleProtectedCall() {
-    setIsLoading(true);
-    try {
-      const result = await getJson("/api/users/info");
-      setApiResult({
-        status: "success",
-        title: "Protected endpoint",
-        payload: result,
-      });
-    } catch (error) {
-      setApiResult({
-        status: "error",
-        title: "Protected endpoint",
-        payload: formatError(error),
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }
+  const { login } = useAuthState();
 
   return (
-    <section className="mt-8 grid gap-6 lg:grid-cols-[0.78fr_1.22fr]">
-      <div className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)]">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-muted-foreground">
-          Actions
-        </p>
-
-        <div className="mt-5 space-y-3">
-          {auth.isAuthenticated ? (
-            <Button className="w-full justify-center" onClick={logout}>
-              Log out
-            </Button>
-          ) : (
-            <Button className="w-full justify-center" onClick={login}>
-              Sign in with Keycloak
-            </Button>
-          )}
-
-            <Button
-            className="w-full justify-center"
-            variant="outline"
-            onClick={handlePublicCall}
-            disabled={isLoading}
-          >
-            Call public endpoint
-          </Button>
-
-          <Button
-            className="w-full justify-center"
-            variant="secondary"
-            onClick={handleProtectedCall}
-            disabled={isLoading || !accessToken}
-          >
-            Call protected endpoint
-          </Button>
-        </div>
-
-        <div className="mt-6 space-y-3">
-          <SessionBadge
-            icon={UserRoundCheck}
-            label="User"
-            value={ready ? (auth.isAuthenticated ? userLabel : "Not signed in") : "Loading"}
-          />
-          <SessionBadge
-            icon={LockKeyhole}
-            label="Access token"
-            value={accessToken ? "Available" : "Missing"}
-          />
-          <SessionBadge
-            icon={Network}
-            label="Gateway"
-            value={import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080"}
-          />
-        </div>
-      </div>
-
-      <div className="rounded-[2rem] border border-border/70 bg-background/88 p-6 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.35)]">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-[0.22em] text-muted-foreground">
-              API results
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-              Validate the same auth slice from React
-            </h2>
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_oklch(0.9_0.06_264/30%)_0%,_transparent_55%),radial-gradient(ellipse_at_bottom_right,_oklch(0.95_0.05_85/25%)_0%,_transparent_55%)] bg-background text-foreground">
+      {/* Nav */}
+      <header className="border-b border-border/60 bg-background/80 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <Sparkles className="size-4.5" />
+            </div>
+            <span className="text-lg font-bold tracking-tight">PeraPulse</span>
           </div>
-          {isLoading ? (
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
-              Working...
-            </span>
-          ) : null}
+          <Button onClick={login} size="sm" className="gap-1.5">
+            Sign in <ArrowRight className="size-3.5" />
+          </Button>
         </div>
+      </header>
 
-        <pre className="mt-6 min-h-72 overflow-auto rounded-[1.5rem] border border-border/70 bg-card px-5 py-4 text-sm leading-6 text-foreground">
-          {apiResult
-            ? JSON.stringify(apiResult, null, 2)
-            : `No request made yet.\n\nUse the public and protected actions on the left to verify the React client against the existing gateway and user-service flow.`}
-        </pre>
-
-        <div className="mt-6 rounded-[1.5rem] border border-border/70 bg-card px-5 py-4">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Auth diagnostics
-          </p>
-          <pre className="mt-3 overflow-auto text-sm leading-6 text-foreground">
-            {JSON.stringify(
-              {
-                isLoading: auth.isLoading,
-                isAuthenticated: auth.isAuthenticated,
-                activeNavigator: auth.activeNavigator ?? null,
-                hasAccessToken: Boolean(accessToken),
-                error: auth.error
-                  ? {
-                      name: auth.error.name,
-                      message: auth.error.message,
-                    }
-                  : null,
-                profile: auth.user?.profile ?? null,
-              },
-              null,
-              2
-            )}
-          </pre>
+      {/* Hero */}
+      <section className="mx-auto max-w-6xl px-6 py-20 text-center md:py-28">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/8 px-4 py-1.5 text-sm font-medium text-primary mb-6">
+          <ShieldCheck className="size-3.5" />
+          Secured by Keycloak OIDC · Dept. of Computer Engineering, UoP
         </div>
-      </div>
-    </section>
-  );
-}
-
-function SessionBadge({ icon: Icon, label, value }) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
-      <div className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-        <Icon className="size-4.5" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-          {label}
+        <h1 className="text-5xl font-extrabold tracking-tight text-foreground sm:text-6xl md:text-7xl leading-[1.08]">
+          Connect. Grow.{" "}
+          <span className="bg-gradient-to-r from-primary to-indigo-400 bg-clip-text text-transparent">
+            Thrive.
+          </span>
+        </h1>
+        <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
+          PeraPulse is the department engagement &amp; career platform for
+          students and alumni of the Department of Computer Engineering,
+          University of Peradeniya.
         </p>
-        <p className="truncate text-sm font-medium">{value}</p>
-      </div>
+        <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <Button size="lg" onClick={login} className="gap-2 px-8">
+            Get started <ArrowRight className="size-4" />
+          </Button>
+          <Button variant="outline" size="lg" className="px-8">
+            Learn more
+          </Button>
+        </div>
+      </section>
+
+      {/* Feature cards */}
+      <section className="mx-auto max-w-6xl px-6 pb-24">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map(({ icon: Icon, color, bg, title, desc }) => (
+            <div
+              key={title}
+              className="group rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-lg hover:shadow-primary/5"
+            >
+              <div className={`mb-4 inline-flex size-11 items-center justify-center rounded-xl ${bg} ${color}`}>
+                <Icon className="size-5" />
+              </div>
+              <h3 className="text-base font-semibold text-foreground">{title}</h3>
+              <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA banner */}
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-indigo-500 px-10 py-14 text-center text-white shadow-xl shadow-primary/20">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_white/8%,_transparent_50%)]" />
+          <h2 className="text-3xl font-bold tracking-tight">
+            Ready to join the community?
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-base text-white/80">
+            Sign in with your Keycloak account to access the full platform.
+          </p>
+          <Button
+            onClick={login}
+            size="lg"
+            className="mt-8 gap-2 bg-white text-primary hover:bg-white/90 px-8 font-semibold"
+          >
+            Sign in with Keycloak <ArrowRight className="size-4" />
+          </Button>
+        </div>
+      </section>
     </div>
   );
-}
-
-function formatError(error) {
-  return {
-    message: error.message,
-    status: error.status ?? null,
-    payload: error.data ?? null,
-  };
 }

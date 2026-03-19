@@ -22,12 +22,20 @@ public class LikeController {
 
     private final LikeService likeService;
 
+    private String resolveSub(Jwt jwt) {
+        String sub = jwt.getSubject();
+        if (sub != null) return sub;
+        String username = jwt.getClaimAsString("preferred_username");
+        if (username != null) return username;
+        return "unknown";
+    }
+
     @PostMapping
     public ResponseEntity<Void> like(
             @PathVariable UUID postId,
             @AuthenticationPrincipal Jwt jwt) {
 
-        likeService.likePost(postId, jwt.getSubject());
+        likeService.likePost(postId, resolveSub(jwt));
         return ResponseEntity.ok().build();
     }
 
@@ -36,7 +44,7 @@ public class LikeController {
             @PathVariable UUID postId,
             @AuthenticationPrincipal Jwt jwt) {
 
-        likeService.unlikePost(postId, jwt.getSubject());
+        likeService.unlikePost(postId, resolveSub(jwt));
         return ResponseEntity.noContent().build();
     }
 }

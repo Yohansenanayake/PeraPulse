@@ -26,20 +26,38 @@ import com.perapulse.feed_service.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
+
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
+@Slf4j
 public class PostController {
 
     private final PostService postService;
+
+    /** Resolve caller identity: Keycloak 26 omits 'sub' in OIDC access tokens,
+     *  so fall back to 'preferred_username' (unique email in this realm). */
+    private String resolveSub(Jwt jwt) {
+        String sub = jwt.getSubject(); // standard 'sub' claim
+        if (sub != null) return sub;
+        // Keycloak 26 OIDC fallback
+        String username = jwt.getClaimAsString("preferred_username");
+        if (username != null) return username;
+        throw new ResponseStatusException(
+            org.springframework.http.HttpStatus.UNAUTHORIZED,
+            "Unable to identify caller from JWT");
+    }
 
     @PostMapping
     public ResponseEntity<PostResponse> createPost(
             @Valid @RequestBody CreatePostRequest req,
             @AuthenticationPrincipal Jwt jwt) {
 
-        Post post = postService.createPost(jwt.getSubject(), req);
-        PostResponse response = postService.toResponse(post, jwt.getSubject());
+        String callerSub = resolveSub(jwt);
+        log.debug("createPost: caller={}", callerSub);
+        Post post = postService.createPost(callerSub, req);
+        PostResponse response = postService.toResponse(post, callerSub);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -49,7 +67,7 @@ public class PostController {
             @AuthenticationPrincipal Jwt jwt) {
 
         return postService.getFeed(pageable)
-                .map(post -> postService.toResponse(post, jwt.getSubject()));
+                .map(post -> postService.toResponse(post, resolveSub(jwt)));
     }
 
     @GetMapping("/{postId}")
@@ -58,7 +76,7 @@ public class PostController {
             @AuthenticationPrincipal Jwt jwt) {
 
         Post post = postService.getPost(postId);
-        return postService.toResponse(post, jwt.getSubject());
+        return postService.toResponse(post, resolveSub(jwt));
     }
 
     @DeleteMapping("/{postId}")
@@ -67,7 +85,7 @@ public class PostController {
             @AuthenticationPrincipal Jwt jwt) {
 
         boolean isAdmin = hasRole(jwt, "ADMIN");
-        postService.deletePost(postId, jwt.getSubject(), isAdmin);
+        postService.deletePost(postId, resolveSub(jwt), isAdmin);
         return ResponseEntity.noContent().build();
     }
 

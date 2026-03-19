@@ -1,7 +1,7 @@
 export const oidcConfig = {
   authority:
     import.meta.env.VITE_OIDC_AUTHORITY ??
-    "http://localhost:8080/auth/realms/perapulse",
+    "http://localhost:8180/auth/realms/perapulse",
   client_id: import.meta.env.VITE_OIDC_CLIENT_ID ?? "perapulse-react-web",
   redirect_uri:
     import.meta.env.VITE_OIDC_REDIRECT_URI ?? "http://localhost:5173/",
