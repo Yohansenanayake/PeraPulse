@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { to: "/feed", icon: Newspaper, label: "Feed" },
   { to: "/opportunities", icon: Briefcase, label: "Opportunities" },
   { to: "/events", icon: CalendarDays, label: "Events" },
+  { to: "/people", icon: Users, label: "People" },
   { to: "/notifications", icon: Bell, label: "Notifications" },
   { to: "/profile/me", icon: User, label: "My Profile" },
 ];

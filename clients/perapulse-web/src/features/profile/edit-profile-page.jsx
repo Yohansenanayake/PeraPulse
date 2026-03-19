@@ -1,95 +1,279 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Save } from "lucide-react";
-import { profilesApi } from "@/api/profiles";
-import { PageHeader } from "@/components/shared/page-header";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Edit3, Eye, Save, X } from "lucide-react";
+
+import { getErrorMessage } from "@/api/http-client";
+import { ErrorState } from "@/components/shared/error-state";
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
+import { ProfileCard } from "@/features/profile/profile-card";
+import {
+  useMyProfile,
+  useUpdateMyProfile,
+} from "@/features/user-service/use-user-service";
+
+function toFormState(profile) {
+  return {
+    displayName: profile?.displayName ?? "",
+    bio: profile?.bio ?? "",
+    department: profile?.department ?? "",
+    gradYear: profile?.gradYear?.toString() ?? "",
+    linkedinUrl: profile?.linkedinUrl ?? "",
+    avatarUrl: profile?.avatarUrl ?? "",
+  };
+}
+
+function toPayload(form) {
+  return {
+    displayName: form.displayName.trim() || null,
+    bio: form.bio.trim() || null,
+    department: form.department.trim() || null,
+    gradYear: form.gradYear ? Number(form.gradYear) : null,
+    linkedinUrl: form.linkedinUrl.trim() || null,
+    avatarUrl: form.avatarUrl.trim() || null,
+  };
+}
 
 export function EditProfilePage() {
-  const queryClient = useQueryClient();
-
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ["my-profile"],
-    queryFn: () => profilesApi.getMyProfile(),
-  });
-
-  const [form, setForm] = useState({
-    displayName: "",
-    bio: "",
-    department: "",
-    gradYear: "",
-    linkedinUrl: "",
-    avatarUrl: "",
-  });
+  const { data: profile, isLoading, isError, error, refetch } = useMyProfile();
+  const updateProfile = useUpdateMyProfile();
+  const [isEditing, setIsEditing] = useState(false);
+  const [form, setForm] = useState(toFormState(null));
 
   useEffect(() => {
     if (profile) {
-      setForm({
-        displayName: profile.displayName ?? "",
-        bio: profile.bio ?? "",
-        department: profile.department ?? "",
-        gradYear: profile.gradYear ?? "",
-        linkedinUrl: profile.linkedinUrl ?? "",
-        avatarUrl: profile.avatarUrl ?? "",
-      });
+      setForm(toFormState(profile));
     }
   }, [profile]);
 
-  const mutation = useMutation({
-    mutationFn: () => profilesApi.updateMyProfile(form),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-profile"] }),
-  });
+  const publicProfilePath = useMemo(
+    () => (profile?.keycloakSub ? `/profile/${profile.keycloakSub}` : null),
+    [profile]
+  );
 
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const isDirty = profile
+    ? JSON.stringify(toPayload(form)) !==
+      JSON.stringify(toPayload(toFormState(profile)))
+    : false;
 
-  if (isLoading) return <LoadingSkeleton count={1} />;
+  const setField = (key) => (event) => {
+    const { value } = event.target;
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleCancel = () => {
+    setForm(toFormState(profile));
+    setIsEditing(false);
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    updateProfile.mutate(toPayload(form), {
+      onSuccess: () => {
+        setIsEditing(false);
+      },
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <LoadingSkeleton count={1} />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <ErrorState
+          message={getErrorMessage(error, "Unable to load your profile.")}
+          onRetry={refetch}
+        />
+      </div>
+    );
+  }
+
+  if (!profile) return null;
 
   return (
-    <div className="max-w-xl mx-auto">
-      <PageHeader title="Edit Profile" subtitle="Update your public profile details" />
+    <div className="mx-auto max-w-3xl space-y-6">
+      <PageHeader
+        title="My Profile"
+        subtitle="Review your public profile and switch into edit mode when you want to update it."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {publicProfilePath ? (
+              <Link to={publicProfilePath}>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Eye className="size-4" />
+                  View Public Profile
+                </Button>
+              </Link>
+            ) : null}
+            {!isEditing ? (
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setIsEditing(true)}
+              >
+                <Edit3 className="size-4" />
+                Edit Profile
+              </Button>
+            ) : null}
+          </div>
+        }
+      />
 
-      <form
-        onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}
-        className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4"
-      >
-        <Field label="Display Name">
-          <input value={form.displayName} onChange={set("displayName")} placeholder="Your name" className={inputCls} />
-        </Field>
-        <Field label="Bio">
-          <textarea value={form.bio} onChange={set("bio")} rows={3} placeholder="A short bio about yourself…" className={`${inputCls} resize-none`} />
-        </Field>
-        <Field label="Department">
-          <input value={form.department} onChange={set("department")} placeholder="e.g. Computer Engineering" className={inputCls} />
-        </Field>
-        <Field label="Graduation Year">
-          <input type="number" value={form.gradYear} onChange={set("gradYear")} placeholder="e.g. 2024" className={inputCls} />
-        </Field>
-        <Field label="LinkedIn URL">
-          <input type="url" value={form.linkedinUrl} onChange={set("linkedinUrl")} placeholder="https://linkedin.com/in/…" className={inputCls} />
-        </Field>
-        <Field label="Avatar URL">
-          <input type="url" value={form.avatarUrl} onChange={set("avatarUrl")} placeholder="https://…/avatar.jpg" className={inputCls} />
-        </Field>
+      <ProfileCard
+        profile={profile}
+        subtitle="This is the data other users will see, with sensitive fields hidden on public pages."
+        showEmail
+      />
 
-        {mutation.isSuccess && <p className="text-sm text-emerald-600 font-medium">Profile saved!</p>}
-        {mutation.isError && <p className="text-sm text-destructive">Failed to save. Please try again.</p>}
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">
+              Edit details
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Keep your profile current so students, alumni, and admins see accurate information.
+            </p>
+          </div>
+          {isEditing ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCancel}
+              className="gap-1.5"
+            >
+              <X className="size-4" />
+              Cancel
+            </Button>
+          ) : null}
+        </div>
 
-        <Button type="submit" className="w-full gap-1.5" disabled={mutation.isPending}>
-          <Save className="size-4" />
-          {mutation.isPending ? "Saving…" : "Save Changes"}
-        </Button>
-      </form>
+        {!isEditing ? (
+          <p className="rounded-xl border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
+            Edit mode is off. Use the button above when you want to update your
+            display name, department, graduation year, bio, LinkedIn URL, or
+            avatar URL.
+          </p>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Field label="Display Name">
+              <input
+                value={form.displayName}
+                onChange={setField("displayName")}
+                placeholder="Your name"
+                className={inputCls}
+              />
+            </Field>
+
+            <Field label="Bio">
+              <textarea
+                value={form.bio}
+                onChange={setField("bio")}
+                rows={4}
+                placeholder="A short bio about yourself."
+                className={`${inputCls} resize-none`}
+              />
+            </Field>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Department">
+                <input
+                  value={form.department}
+                  onChange={setField("department")}
+                  placeholder="Computer Engineering"
+                  className={inputCls}
+                />
+              </Field>
+
+              <Field label="Graduation Year">
+                <input
+                  type="number"
+                  min={1950}
+                  max={2100}
+                  value={form.gradYear}
+                  onChange={setField("gradYear")}
+                  placeholder="2024"
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+
+            <Field label="LinkedIn URL">
+              <input
+                type="url"
+                value={form.linkedinUrl}
+                onChange={setField("linkedinUrl")}
+                placeholder="https://linkedin.com/in/your-profile"
+                className={inputCls}
+              />
+            </Field>
+
+            <Field label="Avatar URL">
+              <input
+                type="url"
+                value={form.avatarUrl}
+                onChange={setField("avatarUrl")}
+                placeholder="https://example.com/avatar.jpg"
+                className={inputCls}
+              />
+            </Field>
+
+            {updateProfile.isSuccess ? (
+              <p className="text-sm font-medium text-emerald-600">
+                Profile saved successfully.
+              </p>
+            ) : null}
+
+            {updateProfile.isError ? (
+              <p className="text-sm text-destructive">
+                {getErrorMessage(
+                  updateProfile.error,
+                  "We couldn't save your profile."
+                )}
+              </p>
+            ) : null}
+
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancel}
+                disabled={updateProfile.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="gap-1.5"
+                disabled={updateProfile.isPending || !isDirty}
+              >
+                <Save className="size-4" />
+                {updateProfile.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
 
-const inputCls = "w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+const inputCls =
+  "w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
 function Field({ label, children }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</label>
+      <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </label>
       {children}
     </div>
   );

@@ -233,8 +233,6 @@ services:
       VITE_OIDC_POST_LOGOUT_REDIRECT_URI: http://localhost:5173/
     ports:
       - "5173:5173"
-    depends_on:
-      - api-gateway
 
 volumes:
   postgres_data:
