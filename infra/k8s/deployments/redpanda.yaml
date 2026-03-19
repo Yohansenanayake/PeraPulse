@@ -19,6 +19,7 @@ spec:
         - name: redpanda
           image: docker.redpanda.com/redpandadata/redpanda:latest
           command:
+            - rpk
             - redpanda
             - start
             - --smp=1

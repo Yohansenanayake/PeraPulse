@@ -14,7 +14,7 @@ data:
   KEYCLOAK_INTERNAL_URL: "http://keycloak:8080"
 
   # ── JWT validation URIs ──────────────────────────────────────────────────
-  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://api.perapulse.org/auth/realms/perapulse"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "https://api.perapulse.org/auth/realms/perapulse"
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs"
 
   # ── Inter-service URLs (used by API Gateway) ────────────────────────────

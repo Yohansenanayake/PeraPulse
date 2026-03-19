@@ -16,9 +16,9 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          # Replace <ACR_LOGIN_SERVER> with your ACR login server
+          # Replace perapulseacr.azurecr.io with your ACR login server
           # e.g. perapulseacr.azurecr.io
-          image: <ACR_LOGIN_SERVER>/perapulse/api-gateway:latest
+          image: perapulseacr.azurecr.io/perapulse/api-gateway:latest
           ports:
             - containerPort: 8080
           envFrom:

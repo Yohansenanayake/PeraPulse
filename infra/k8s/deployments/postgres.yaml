@@ -1,26 +1,27 @@
 ---
-# ── PersistentVolumeClaim ──────────────────────────────────────────────────
+# ── Headless Service (required by StatefulSet for stable pod DNS) ───────────
 apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: postgres-pvc
-  namespace: perapulse
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: managed-csi  # Azure Standard SSD
-  resources:
-    requests:
-      storage: 10Gi
-
----
-# ── Deployment ─────────────────────────────────────────────────────────────
-apiVersion: apps/v1
-kind: Deployment
+kind: Service
 metadata:
   name: postgres
   namespace: perapulse
 spec:
+  clusterIP: None          # headless — DNS resolves directly to the pod IP
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+---
+# ── StatefulSet ─────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: perapulse
+spec:
+  serviceName: postgres    # must match the headless service above
   replicas: 1
   selector:
     matchLabels:
@@ -41,6 +42,8 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: SPRING_DATASOURCE_PASSWORD
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
           ports:
             - containerPort: 5432
           volumeMounts:
@@ -61,24 +64,17 @@ spec:
               memory: "512Mi"
               cpu: "500m"
       volumes:
-        - name: postgres-data
-          persistentVolumeClaim:
-            claimName: postgres-pvc
         - name: init-sql
           configMap:
             name: postgres-init
-
----
-# ── Service ────────────────────────────────────────────────────────────────
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres
-  namespace: perapulse
-spec:
-  selector:
-    app: postgres
-  ports:
-    - port: 5432
-      targetPort: 5432
-  type: ClusterIP
+  # ── PVC managed by the StatefulSet (bound to postgres-0) ─────────────────
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: managed-csi    # Azure Standard SSD
+        resources:
+          requests:
+            storage: 10Gi

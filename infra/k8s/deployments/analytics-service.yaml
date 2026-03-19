@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: analytics-service
-          image: <ACR_LOGIN_SERVER>/perapulse/analytics-service:latest
+          image: perapulseacr.azurecr.io/perapulse/analytics-service:latest
           ports:
             - containerPort: 8086
           envFrom:

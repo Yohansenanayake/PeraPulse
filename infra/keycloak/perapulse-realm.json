@@ -42,16 +42,20 @@
       "redirectUris": [
         "http://localhost:8080/*",
         "http://perapulse.org/*",
-        "https://perapulse.org/*"
+        "https://perapulse.org/*",
+        "http://api.perapulse.org/*",
+        "https://api.perapulse.org/*"
       ],
       "webOrigins": [
         "http://localhost:8080",
         "http://perapulse.org",
-        "https://perapulse.org"
+        "https://perapulse.org",
+        "http://api.perapulse.org",
+        "https://api.perapulse.org"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:8080/* http://perapulse.org/* https://perapulse.org/*"
+        "post.logout.redirect.uris": "http://localhost:8080/* http://perapulse.org/* https://perapulse.org/* http://api.perapulse.org/* https://api.perapulse.org/*"
       },
       "defaultClientScopes": [
         "web-origins",

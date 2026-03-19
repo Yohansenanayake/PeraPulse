@@ -34,7 +34,7 @@ In-cluster services (ClusterIP, not reachable from outside):
   analytics-service:8086
 ```
 
-Estimated cost: **~$60–80/month** (2× Standard_B2s nodes + 10 Gi managed disk).
+Estimated cost: **~$60–80/month** (2× standard_b2als_v2 nodes + 10 Gi managed disk).
 
 ---
 
@@ -99,7 +99,10 @@ helm repo update
 helm install ingress-nginx ingress-nginx/ingress-nginx \
   --namespace ingress-nginx \
   --create-namespace \
-  --set controller.replicaCount=1
+  --set controller.replicaCount=1 \
+  --set controller.allowSnippetAnnotations=true \
+  --set controller.config.annotations-risk-level=Critical \
+  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
 
 # Wait for the external IP to be assigned (can take 2–3 minutes)
 kubectl get svc -n ingress-nginx ingress-nginx-controller --watch
@@ -137,6 +140,57 @@ echo "Public IP: $PUBLIC_IP"
 > **Domain is already baked into the manifests** — `api.perapulse.org` is hardcoded in
 > `infra/k8s/configmaps/app-config.yaml`, `infra/k8s/deployments/keycloak.yaml`, and
 > `infra/k8s/ingress/ingress.yaml`. No manual IP patching is needed for these files.
+
+---
+
+## Step 2c — Enable HTTPS with Cloudflare Origin CA
+
+This step configures **Cloudflare Full (strict) SSL**: both the browser→Cloudflare and the
+Cloudflare→cluster legs are encrypted. The Origin CA certificate is trusted by Cloudflare
+(not browsers directly), lasts 15 years, and requires no renewal.
+
+### 1. Set Cloudflare SSL mode to Full (strict)
+
+Cloudflare dashboard → **perapulse.org** → **SSL/TLS → Overview** → select **Full (strict)**.
+
+### 2. Generate an Origin CA certificate
+
+Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**
+
+- Key type: RSA (2048)
+- Hostnames: `api.perapulse.org` (add `*.perapulse.org` if you want wildcard coverage)
+- Expiry: 15 years (default)
+- Click **Create**
+
+Save the two values to local files (keep these out of git):
+
+```
+origin-cert.pem   ← "Origin Certificate"
+origin-key.pem    ← "Private Key"
+```
+
+> **Never commit these files.** Add them to `.gitignore`:
+> ```bash
+> echo "origin-cert.pem" >> .gitignore
+> echo "origin-key.pem"  >> .gitignore
+> ```
+
+### 3. Create the TLS secret in the cluster
+
+```bash
+kubectl create secret tls cloudflare-origin-cert \
+  --cert=origin-cert.pem \
+  --key=origin-key.pem \
+  --namespace perapulse
+```
+
+The ingress manifest already references this secret name (`cloudflare-origin-cert`) in its `tls:` block — no further manifest changes needed.
+
+### 4. Flip DNS to Cloudflare proxy (orange cloud)
+
+In Cloudflare DNS, change the `api` A record **Proxy status** from grey cloud to **orange cloud (Proxied)**.
+
+From this point `https://api.perapulse.org` is live. Cloudflare presents its own certificate to browsers; your Origin CA cert secures the Cloudflare→cluster leg.
 
 ---
 
@@ -223,7 +277,8 @@ kubectl apply -f infra/k8s/configmaps/
 kubectl apply -f infra/k8s/deployments/postgres.yaml
 
 echo "Waiting for PostgreSQL to be ready..."
-kubectl wait --for=condition=ready pod -l app=postgres \
+# StatefulSet pod is always named postgres-0
+kubectl wait --for=condition=ready pod/postgres-0 \
   -n perapulse --timeout=120s
 
 kubectl apply -f infra/k8s/deployments/redpanda.yaml
@@ -266,10 +321,10 @@ kubectl get pods -n perapulse
 kubectl get svc -n perapulse
 
 # Gateway health
-curl http://api.perapulse.org/actuator/health
+curl https://api.perapulse.org/actuator/health
 
 # Keycloak realm (proxied through gateway)
-curl http://api.perapulse.org/auth/realms/perapulse
+curl https://api.perapulse.org/auth/realms/perapulse
 
 # Pod logs (example)
 kubectl logs -n perapulse deployment/api-gateway --tail=50
@@ -300,8 +355,9 @@ az aks check-acr --name $AKS_CLUSTER --resource-group $RESOURCE_GROUP --acr $ACR
 
 ### Keycloak `JWT issuer mismatch` errors in service logs
 The token's `iss` claim doesn't match `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI`.
-1. Check what issuer Keycloak is embedding: decode any JWT at [jwt.io](https://jwt.io) and look at the `iss` field. It should be `http://api.perapulse.org/auth/realms/perapulse`.
-2. Ensure `KC_HOSTNAME` in `keycloak.yaml` (`api.perapulse.org`) matches the `issuer-uri` in `app-config.yaml`.
+1. Check what issuer Keycloak is embedding: decode any JWT at [jwt.io](https://jwt.io) and look at the `iss` field. It should be `https://api.perapulse.org/auth/realms/perapulse`.
+2. Ensure `KC_HOSTNAME` in `keycloak.yaml` (`https://api.perapulse.org`) matches the `issuer-uri` in `app-config.yaml`.
+3. Confirm Cloudflare is in **Full (strict)** mode and DNS is set to **Proxied (orange cloud)** — if DNS is grey cloud, `X-Forwarded-Proto: https` is never sent and Keycloak will generate `http://` issuers.
 3. After fixing, run:
    ```bash
    kubectl rollout restart deployment -n perapulse
@@ -327,6 +383,16 @@ kubectl delete namespace ingress-nginx
 az group delete --name $RESOURCE_GROUP --yes --no-wait
 ```
 
+> **StatefulSet PVC note:** Deleting the `perapulse` namespace also deletes the
+> `postgres-data-postgres-0` PVC and its underlying Azure disk. If you want to
+> preserve the data (e.g. for a cluster recreation), delete the StatefulSet first
+> and manually retain the PVC before deleting the namespace:
+> ```bash
+> kubectl delete statefulset postgres -n perapulse
+> # PVC postgres-data-postgres-0 is now detached but still exists
+> kubectl get pvc -n perapulse
+> ```
+
 ---
 
 ## File Reference
@@ -337,7 +403,7 @@ az group delete --name $RESOURCE_GROUP --yes --no-wait
 | `infra/k8s/configmaps/app-config.yaml` | Shared env vars (service URLs, JWT URIs, Kafka) |
 | `infra/k8s/configmaps/postgres-init.yaml` | PostgreSQL DB initialisation SQL |
 | `infra/k8s/secrets/app-secrets.yaml` | DB password, Keycloak admin password |
-| `infra/k8s/deployments/postgres.yaml` | PostgreSQL + PVC |
+| `infra/k8s/deployments/postgres.yaml` | PostgreSQL StatefulSet + headless Service (PVC managed via `volumeClaimTemplates`) |
 | `infra/k8s/deployments/redpanda.yaml` | Redpanda (Kafka) |
 | `infra/k8s/deployments/keycloak.yaml` | Keycloak OIDC provider |
 | `infra/k8s/deployments/api-gateway.yaml` | Spring Cloud Gateway |

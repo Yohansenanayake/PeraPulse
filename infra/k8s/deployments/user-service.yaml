@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: <ACR_LOGIN_SERVER>/perapulse/user-service:latest
+          image: perapulseacr.azurecr.io/perapulse/user-service:latest
           ports:
             - containerPort: 8081
           envFrom:

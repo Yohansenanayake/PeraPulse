@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: <ACR_LOGIN_SERVER>/perapulse/notification-service:latest
+          image: perapulseacr.azurecr.io/perapulse/notification-service:latest
           ports:
             - containerPort: 8085
           envFrom:

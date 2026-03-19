@@ -9,8 +9,16 @@ metadata:
     # Increase timeout for Keycloak token exchanges
     nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    # Allow same-origin iframes (required for Keycloak admin console 3rd-party cookie check)
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_hide_header X-Frame-Options;
+      add_header X-Frame-Options "SAMEORIGIN";
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.perapulse.org
+      secretName: cloudflare-origin-cert
   rules:
     - host: api.perapulse.org
       http:
