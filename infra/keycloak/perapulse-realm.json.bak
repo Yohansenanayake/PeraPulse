@@ -40,22 +40,14 @@
       "serviceAccountsEnabled": false,
       "protocol": "openid-connect",
       "redirectUris": [
-        "http://localhost:8080/*",
-        "http://perapulse.org/*",
-        "https://perapulse.org/*",
-        "http://api.perapulse.org/*",
-        "https://api.perapulse.org/*"
+        "http://localhost:8080/*"
       ],
       "webOrigins": [
-        "http://localhost:8080",
-        "http://perapulse.org",
-        "https://perapulse.org",
-        "http://api.perapulse.org",
-        "https://api.perapulse.org"
+        "http://localhost:8080"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:8080/* http://perapulse.org/* https://perapulse.org/* http://api.perapulse.org/* https://api.perapulse.org/*"
+        "post.logout.redirect.uris": "http://localhost:8080/*"
       },
       "defaultClientScopes": [
         "web-origins",
@@ -82,18 +74,14 @@
       "serviceAccountsEnabled": false,
       "protocol": "openid-connect",
       "redirectUris": [
-        "http://localhost:5173/*",
-        "http://perapulse.org/*",
-        "https://perapulse.org/*"
+        "http://localhost:5173/*"
       ],
       "webOrigins": [
-        "http://localhost:5173",
-        "http://perapulse.org",
-        "https://perapulse.org"
+        "http://localhost:5173"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:5173/* http://perapulse.org/* https://perapulse.org/*"
+        "post.logout.redirect.uris": "http://localhost:5173/*"
       },
       "defaultClientScopes": [
         "web-origins",
@@ -107,29 +95,7 @@
         "phone",
         "offline_access",
         "microprofile-jwt"
-      ],
-      "protocolMappers": [
-        {
-          "name": "sub-claim",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-sub-mapper",
-          "consentRequired": false,
-          "config": {
-            "access.token.claim": "true",
-            "id.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        }
       ]
-    },
-    {
-      "clientId": "perapulse-api-test",
-      "name": "PeraPulse API Test Client",
-      "enabled": true,
-      "publicClient": true,
-      "directAccessGrantsEnabled": true,
-      "standardFlowEnabled": false,
-      "protocol": "openid-connect"
     }
   ],
   "users": [

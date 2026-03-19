@@ -1,0 +1,73 @@
+---
+# ── Deployment ─────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redpanda
+  namespace: perapulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redpanda
+  template:
+    metadata:
+      labels:
+        app: redpanda
+    spec:
+      containers:
+        - name: redpanda
+          image: docker.redpanda.com/redpandadata/redpanda:latest
+          command:
+            - rpk
+            - redpanda
+            - start
+            - --smp=1
+            - --memory=512M
+            - --overprovisioned
+            - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+            - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
+            - --pandaproxy-addr=0.0.0.0:8082
+            - --advertise-pandaproxy-addr=redpanda:8082
+          ports:
+            - containerPort: 9092
+              name: kafka
+            - containerPort: 9644
+              name: admin
+            - containerPort: 8082
+              name: pandaproxy
+          readinessProbe:
+            exec:
+              command: ["rpk", "cluster", "health"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "768Mi"
+              cpu: "500m"
+
+---
+# ── Service ────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: redpanda
+  namespace: perapulse
+spec:
+  selector:
+    app: redpanda
+  ports:
+    - name: kafka
+      port: 9092
+      targetPort: 9092
+    - name: admin
+      port: 9644
+      targetPort: 9644
+    - name: pandaproxy
+      port: 8082
+      targetPort: 8082
+  type: ClusterIP

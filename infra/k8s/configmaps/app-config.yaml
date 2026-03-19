@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: perapulse
+data:
+  # ── Shared datasource credentials (non-secret) ──────────────────────────
+  SPRING_DATASOURCE_USERNAME: "perapulse"
+
+  # ── Kafka / Redpanda ────────────────────────────────────────────────────
+  KAFKA_BOOTSTRAP_SERVERS: "redpanda:9092"
+
+  # ── Keycloak internal URL (K8s DNS) ─────────────────────────────────────
+  KEYCLOAK_INTERNAL_URL: "http://keycloak:8080"
+
+  # ── JWT validation URIs ──────────────────────────────────────────────────
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "https://api.perapulse.org/auth/realms/perapulse"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs"
+
+  # ── Inter-service URLs (used by API Gateway) ────────────────────────────
+  USER_SERVICE_URL: "http://user-service:8081"
+  FEED_SERVICE_URL: "http://feed-service:8082"
+  OPPORTUNITIES_SERVICE_URL: "http://opportunities-service:8083"
+  EVENTS_SERVICE_URL: "http://events-service:8084"
+  NOTIFICATION_SERVICE_URL: "http://notification-service:8085"
+  ANALYTICS_SERVICE_URL: "http://analytics-service:8086"
