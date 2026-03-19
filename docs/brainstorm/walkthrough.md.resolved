@@ -1,0 +1,117 @@
+# PeraPulse React Frontend — Walkthrough
+
+## What Was Built
+
+A comprehensive React frontend for the PeraPulse Department Engagement & Career Platform, implementing all core user stories from the project proposal.
+
+### File Structure Created (41 files)
+
+```
+src/
+├── api/               # API service layer
+│   ├── http-client.js     (extended: postJson, putJson, patchJson, deleteJson)
+│   ├── feed.js            (posts, comments, likes)
+│   ├── opportunities.js   (listings, applications)
+│   ├── events.js          (events, RSVPs)
+│   ├── notifications.js   (get, mark read)
+│   ├── profiles.js        (profile CRUD, role requests, admin user mgmt)
+│   └── analytics.js       (summary, daily stats, top posts)
+├── store/
+│   └── ui-store.js        (Zustand: sidebar, notifUnreadCount, darkMode)
+├── auth/
+│   └── use-auth-state.js  (extended: isAdmin, isAlumni, isStudent, hasRole())
+├── app/
+│   ├── providers.jsx      (BrowserRouter + QueryClientProvider + OIDC)
+│   └── app-shell.jsx      (full 17-route layout with Sidebar)
+├── components/
+│   ├── layout/
+│   │   └── sidebar.jsx    (role-aware nav, notification badge, dark mode toggle)
+│   ├── shared/
+│   │   ├── auth-guard.jsx
+│   │   ├── role-gate.jsx
+│   │   ├── page-header.jsx
+│   │   ├── loading-skeleton.jsx
+│   │   └── empty-state.jsx / error-state.jsx
+│   └── ui/button.jsx      (existing shadcn/ui)
+└── features/
+    ├── home/landing-page.jsx        (hero + features + CTA)
+    ├── feed/feed-page.jsx           (post list, create post, likes, comments)
+    ├── opportunities/               (5 pages: list, detail, create, manage apps, my apps)
+    ├── events/                      (4 pages: list, detail, create, my RSVPs)
+    ├── notifications/notifications-page.jsx
+    ├── profile/                     (3 pages: view, edit, role request)
+    └── admin/                       (3 pages: dashboard, users, role requests)
+```
+
+### All 17 Routes
+
+| Path | Page | Roles |
+|---|---|---|
+| `/` → `/feed` | Redirect | Any |
+| `/feed` | FeedPage | Any |
+| `/opportunities` | OpportunitiesPage | Any |
+| `/opportunities/create` | CreateOpportunityPage | ALUMNI, ADMIN |
+| `/opportunities/:id` | OpportunityDetailPage | Any |
+| `/opportunities/:id/applications` | ApplicationsManagementPage | ALUMNI, ADMIN |
+| `/applications/me` | MyApplicationsPage | Any |
+| `/events` | EventsPage | Any |
+| `/events/create` | CreateEventPage | ALUMNI, ADMIN |
+| `/events/:id` | EventDetailPage | Any |
+| `/events/me/rsvps` | MyRsvpsPage | Any |
+| `/notifications` | NotificationsPage | Any |
+| `/profile/me` | EditProfilePage | Any |
+| `/profile/role-request` | RoleRequestPage | STUDENT |
+| `/profile/:sub` | ProfilePage | Any |
+| `/admin` | AdminDashboardPage | ADMIN |
+| `/admin/users` | UserManagementPage | ADMIN |
+| `/admin/role-requests` | AdminRoleRequestsPage | ADMIN |
+
+### Design System
+
+- **Primary**: Deep Indigo (`oklch(0.48 0.22 264)`)
+- **Accent**: Amber (`oklch(0.91 0.08 85)`)
+- **Sidebar**: Dark slate background with light text
+- **Typography**: Geist Variable font
+- **Components**: shadcn/ui primitives + custom rounded-2xl card patterns
+
+## How to Run
+
+### Option 1: Local dev (requires Node 20+)
+```bash
+cd clients/perapulse-web
+npm install
+npm run dev
+# Opens http://localhost:5173
+```
+
+### Option 2: Docker Compose (recommended — uses node:20-alpine)
+```bash
+cd infra
+docker compose up react-web
+# Opens http://localhost:5173
+```
+
+> **Note**: The project's `vite@7` and `tailwindcss@4` require Node.js 20+. The system node is v18, so `npm run dev` will fail locally unless using Node 20+ or Docker.
+
+### Environment Variables ([.env.example](file:///home/malshan/Desktop/ACA/CO528/PeraPulse/clients/perapulse-web/.env.example))
+```env
+VITE_API_BASE_URL=http://localhost:8080
+VITE_OIDC_AUTHORITY=http://localhost:8080/auth/realms/perapulse
+VITE_OIDC_CLIENT_ID=perapulse-react-web
+VITE_OIDC_REDIRECT_URI=http://localhost:5173/
+VITE_OIDC_POST_LOGOUT_REDIRECT_URI=http://localhost:5173/
+```
+
+## Key Architectural Decisions
+
+1. **Auth unchanged**: OIDC PKCE flow via `react-oidc-context` is exactly as before. Role extraction reads `realm_access.roles` from the Keycloak JWT.
+
+2. **React Query for all API calls**: Provides caching, loading states, pagination, and mutation states. Cache invalidation happens on every mutation.
+
+3. **Zustand for UI state only**: Sidebar open/close, notification badge count, dark mode toggling. No server state in Zustand.
+
+4. **Role-aware sidebar**: Shows different nav sections based on role (STUDENT sees "Request Alumni", ALUMNI/ADMIN see "Create" section, ADMIN sees admin panel links).
+
+5. **Graceful API failures**: Every feature page has loading skeletons, error states with retry, and empty states.
+
+6. **API compatibility**: All endpoints match the spec in [project_proposal.md](file:///home/malshan/Desktop/ACA/CO528/PeraPulse/docs/brainstorm/project_proposal.md) exactly (paths, query params, body shapes).
