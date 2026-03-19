@@ -91,7 +91,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/user_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8180/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
     ports:
       - "8081:8081"
@@ -109,7 +109,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/feed_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8180/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
       USER_SERVICE_URL: http://user-service:8081
@@ -131,7 +131,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/opportunities_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8180/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
     ports:
@@ -149,7 +149,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/events_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8180/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
     ports:
@@ -167,7 +167,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8180/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
     ports:
@@ -185,7 +185,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/analytics_db
       SPRING_DATASOURCE_USERNAME: perapulse
       SPRING_DATASOURCE_PASSWORD: perapulse_secret
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8180/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
     ports:
@@ -200,7 +200,7 @@ services:
     build: ../services/api-gateway
     container_name: perapulse-api-gateway
     environment:
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8180/auth/realms/perapulse
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/auth/realms/perapulse
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/auth/realms/perapulse/protocol/openid-connect/certs
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       USER_SERVICE_URL: http://user-service:8081
@@ -227,12 +227,13 @@ services:
       - /app/node_modules
     environment:
       VITE_API_BASE_URL: http://localhost:8080
-      VITE_OIDC_AUTHORITY: http://localhost:8180/auth/realms/perapulse
+      VITE_OIDC_AUTHORITY: http://localhost:8080/auth/realms/perapulse
       VITE_OIDC_CLIENT_ID: perapulse-react-web
       VITE_OIDC_REDIRECT_URI: http://localhost:5173/
       VITE_OIDC_POST_LOGOUT_REDIRECT_URI: http://localhost:5173/
     ports:
       - "5173:5173"
-
+    depends_on:
+      - api-gateway
 volumes:
   postgres_data:
