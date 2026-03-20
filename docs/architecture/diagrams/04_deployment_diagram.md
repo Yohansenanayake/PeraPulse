@@ -195,6 +195,152 @@ flowchart TD
 
 ---
 
+## 4C — Production: AKS Self-Hosted (PostgreSQL + Redpanda in-cluster)
+
+> Same Cloudflare → AKS entry path as 4A, but PostgreSQL and Redpanda run as StatefulSets inside the cluster instead of using Azure managed services. This is the actual real-world deployment of PeraPulse.
+
+```mermaid
+flowchart TD
+
+    %% ── Internet / Users ────────────────────────────────────────
+    subgraph INTERNET["Internet"]
+        direction LR
+        BR["Web Browser\nHTTPS"]
+        APP["Mobile App\nHTTPS · Planned"]
+        GH["GitHub Repository\nSource of Truth"]
+    end
+
+    %% ── Vercel CDN ──────────────────────────────────────────────
+    VERCEL["Vercel CDN\nReact Web SPA\nGlobal Edge Network"]
+
+    %% ── Cloudflare ──────────────────────────────────────────────
+    subgraph CF["Cloudflare (perapulse.org)"]
+        direction LR
+        CF_DNS["DNS\nA record: api.perapulse.org\n→ Azure Load Balancer IP"]
+        CF_PROXY["Proxy (Orange Cloud)\nDDoS Protection · CDN\nFull Strict SSL mode"]
+        CF_CERT["Origin CA Certificate\n15-year validity\nk8s Secret: cloudflare-origin-cert"]
+    end
+
+    %% ── Azure Cloud Boundary ────────────────────────────────────
+    subgraph AZURE["Microsoft Azure Cloud"]
+
+        %% ── CI/CD ───────────────────────────────────────────────
+        subgraph CICD["CI/CD Pipeline"]
+            direction LR
+            GHA["GitHub Actions\nTrigger: push to main"]
+            ACR["Azure Container Registry\nDocker Images · All 7 services"]
+        end
+
+        %% ── AKS Cluster ─────────────────────────────────────────
+        subgraph AKS["Azure Kubernetes Service (AKS) · Namespace: perapulse\n2× Standard_B2als_v2 nodes"]
+
+            ALB["Azure Load Balancer\nPublic IP"]
+            NG["NGINX Ingress Controller\nTLS via Origin CA cert\n/auth → keycloak · /api → api-gateway"]
+            KC["Keycloak Pod\nkeycloak:26.5.5 · ClusterIP :8080"]
+            GW["API Gateway Pod\nClusterIP :8080 · JWT Validation · Routing"]
+
+            subgraph PODS["Microservice Pods — ClusterIP"]
+                direction LR
+                US["user-service :8081"]
+                FS["feed-service :8082"]
+                OS["opportunities-service :8083"]
+                ES["events-service :8084"]
+                NS["notification-service :8085"]
+                AN["analytics-service :8086"]
+            end
+
+            %% ── In-cluster stateful workloads ───────────────────
+            subgraph STATEFUL["Stateful Workloads — StatefulSets + PersistentVolumes"]
+                direction LR
+                subgraph PG_CLUSTER["PostgreSQL StatefulSet"]
+                    PG["postgres:16\nClusterIP :5432\n7 Databases: user_db · feed_db\nopp_db · events_db · notif_db\nanalytics_db · keycloak_db"]
+                    PG_PVC["PersistentVolumeClaim\nAzure Managed Disk\nReadWriteOnce"]
+                end
+                subgraph RP_CLUSTER["Redpanda StatefulSet"]
+                    RP["Redpanda Broker\nKafka API: ClusterIP :9092\n4 Topics auto-created"]
+                    RP_PVC["PersistentVolumeClaim\nAzure Managed Disk\nReadWriteOnce"]
+                    RPC["Redpanda Console\nClusterIP :8080\nKafka UI (internal)"]
+                end
+            end
+
+            subgraph KUBE_CFG["Kubernetes Config"]
+                direction LR
+                CM["ConfigMaps\nkeycloak-config · kafka-config"]
+                SEC["Secrets\ndb-credentials · keycloak-admin\ncloudflare-origin-cert"]
+            end
+        end
+
+        %% ── Azure Storage (still managed) ───────────────────────
+        BLOB["Azure Blob Storage\nMedia Files · Post Images\nEvent Banners · Resume Uploads"]
+    end
+
+    %% ── Request Flow ────────────────────────────────────────────
+    BR -->|"HTTPS (web app)"| VERCEL
+    BR -->|"HTTPS api.perapulse.org\nTLS leg 1: browser ↔ Cloudflare"| CF_PROXY
+    APP -->|"HTTPS api.perapulse.org"| CF_PROXY
+    CF_DNS -.->|"A record → Load Balancer IP"| ALB
+    CF_PROXY -->|"HTTPS proxied\nTLS leg 2: Cloudflare ↔ NGINX\nvia Origin CA cert"| ALB
+    CF_CERT -.->|"mounted as TLS secret"| NG
+
+    GH -->|"push to main"| GHA
+    GHA -->|"Docker build + push"| ACR
+    GHA -->|"kubectl apply"| AKS
+    ACR -->|"image pull"| PODS
+
+    ALB --> NG
+    NG -->|"/auth/*"| KC
+    NG -->|"/api/*"| GW
+    GW <-.->|"JWT / JWKS"| KC
+    GW -->|"REST ClusterIP"| PODS
+
+    %% ── In-cluster data connections ─────────────────────────────
+    PODS -->|"JDBC :5432\nClusterIP"| PG
+    KC -->|"JDBC :5432\nClusterIP"| PG
+    PG --- PG_PVC
+    RP --- RP_PVC
+    RP --- RPC
+
+    FS & OS & ES & US ==>|"Kafka PRODUCE\n:9092 ClusterIP"| RP
+    RP ==>|"Kafka CONSUME\nnotification-service-cg"| NS
+    RP ==>|"Kafka CONSUME\nanalytics-service-cg"| AN
+
+    BR & APP -.->|"HTTPS (media URLs)"| BLOB
+    PODS --- KUBE_CFG
+
+    %% ── Styles ──────────────────────────────────────────────────
+    classDef user      fill:#D6EAF8,stroke:#2E86C1,color:#1a1a1a
+    classDef vercel    fill:#000000,color:#fff,stroke:#333
+    classDef cf        fill:#F6821F,color:#fff,stroke:#c96a18
+    classDef cicd      fill:#566573,color:#fff,stroke:#2C3E50
+    classDef ingress   fill:#2E86C1,color:#fff,stroke:#1A5276
+    classDef keycloak  fill:#8E44AD,color:#fff,stroke:#6C3483
+    classDef gateway   fill:#1A5276,color:#fff,stroke:#154360
+    classDef service   fill:#27AE60,color:#fff,stroke:#1E8449
+    classDef kafka     fill:#E67E22,color:#fff,stroke:#CA6F1E
+    classDef db        fill:#1ABC9C,color:#fff,stroke:#17A589
+    classDef pvc       fill:#FDFEFE,stroke:#AEB6BF,color:#1a1a1a,stroke-dasharray:3 3
+    classDef config    fill:#FDFEFE,stroke:#AEB6BF,color:#1a1a1a,stroke-dasharray:3 3
+    classDef managed   fill:#F2F3F4,stroke:#AEB6BF,color:#1a1a1a
+
+    class BR,APP,GH user
+    class VERCEL vercel
+    class CF_DNS,CF_PROXY,CF_CERT cf
+    class GHA,ACR cicd
+    class ALB,NG ingress
+    class KC keycloak
+    class GW gateway
+    class US,FS,OS,ES,NS,AN service
+    class RP,RPC kafka
+    class PG db
+    class PG_PVC,RP_PVC pvc
+    class CM,SEC config
+    class BLOB managed
+```
+
+*Figure 4c: Real-world AKS Self-Hosted Deployment of PeraPulse, where both PostgreSQL (StatefulSet, 7 databases) and Redpanda (StatefulSet, Kafka-compatible broker) run as in-cluster workloads backed by Azure Managed Disk PersistentVolumeClaims, eliminating the dependency on Azure Event Hubs and Azure PostgreSQL Flexible Server while retaining the Cloudflare reverse proxy, NGINX Ingress, and Azure Blob Storage for media.*
+
+---
+
 ## Cloudflare SSL/TLS Architecture
 
 Cloudflare **Full (strict)** SSL mode creates two independent encrypted legs:
@@ -222,22 +368,22 @@ The Origin CA certificate is stored as a Kubernetes TLS secret (`cloudflare-orig
 
 ## Environment Comparison
 
-| Component | Local Development | Production (Azure) |
-|-----------|------------------|-------------------|
-| **Orchestration** | Docker Compose | Azure Kubernetes Service (AKS) |
-| **Kafka Broker** | Redpanda (single container) | Azure Event Hubs (managed, Kafka endpoint) |
-| **Database** | Single PostgreSQL container (port 5433) | Azure PostgreSQL Flexible Server |
-| **Auth** | Keycloak in Docker (port 8180) | Keycloak pod in AKS (ClusterIP :8080) |
-| **DNS** | localhost / hosts file | Cloudflare DNS (api.perapulse.org) |
-| **CDN / Proxy** | None | Cloudflare Proxy (orange cloud) — DDoS, caching |
-| **TLS/HTTPS** | No (HTTP on localhost) | Full (strict): Cloudflare cert + Origin CA cert |
-| **Ingress** | Direct port mapping (8080–8086) | NGINX Ingress + Azure Load Balancer |
-| **Web Frontend** | Vite dev server (port 5173) | Vercel CDN (global edge) |
-| **Media Storage** | Not implemented locally | Azure Blob Storage + CDN |
-| **Service Discovery** | Docker DNS (container names) | Kubernetes DNS (ClusterIP services) |
-| **Scaling** | Single instance per service | HPA on CPU/memory thresholds |
-| **Image Registry** | Local Docker daemon | Azure Container Registry (ACR) |
-| **CI/CD** | Manual `mvn spring-boot:run` | GitHub Actions → ACR → AKS |
+| Component | Local Dev (4B) | AKS Managed (4A) | AKS Self-Hosted (4C — real) |
+|-----------|---------------|-----------------|----------------------------|
+| **Orchestration** | Docker Compose | AKS | AKS |
+| **Kafka Broker** | Redpanda container | Azure Event Hubs (managed) | Redpanda StatefulSet in-cluster |
+| **Database** | PostgreSQL container (port 5433) | Azure PostgreSQL Flexible Server | PostgreSQL StatefulSet in-cluster |
+| **DB Storage** | Docker volume | Azure managed disks (transparent) | Azure Managed Disk PVC |
+| **Auth** | Keycloak in Docker (port 8180) | Keycloak pod (ClusterIP :8080) | Keycloak pod (ClusterIP :8080) |
+| **DNS** | localhost / hosts file | Cloudflare DNS (api.perapulse.org) | Cloudflare DNS (api.perapulse.org) |
+| **CDN / Proxy** | None | Cloudflare Proxy — DDoS, caching | Cloudflare Proxy — DDoS, caching |
+| **TLS/HTTPS** | No (HTTP on localhost) | Full strict: Cloudflare + Origin CA | Full strict: Cloudflare + Origin CA |
+| **Ingress** | Direct port mapping | NGINX Ingress + Azure Load Balancer | NGINX Ingress + Azure Load Balancer |
+| **Web Frontend** | Vite dev server (port 5173) | Vercel CDN (global edge) | Vercel CDN (global edge) |
+| **Media Storage** | Not implemented | Azure Blob Storage | Azure Blob Storage |
+| **Service Discovery** | Docker DNS (container names) | Kubernetes DNS (ClusterIP) | Kubernetes DNS (ClusterIP) |
+| **Image Registry** | Local Docker daemon | Azure Container Registry (ACR) | Azure Container Registry (ACR) |
+| **CI/CD** | Manual `mvn spring-boot:run` | GitHub Actions → ACR → AKS | GitHub Actions → ACR → AKS |
 
 ---
 
