@@ -1,12 +1,8 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ArrowLeft, CalendarDays, MapPin } from "lucide-react";
-import { eventsApi } from "@/api/events";
-import { useAuthState } from "@/auth/use-auth-state";
-import { LoadingSkeleton } from "@/components/shared/loading-skeleton";
-import { ErrorState } from "@/components/shared/error-state";
-import { Button } from "@/components/ui/button";
+import { getMockEventById } from "@/features/events/mock-events";
 
 const RSVP_OPTIONS = [
   { value: "GOING", label: "Going", color: "bg-emerald-500" },
@@ -17,28 +13,9 @@ const RSVP_OPTIONS = [
 export function EventDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin, isAlumni, auth } = useAuthState();
-  const queryClient = useQueryClient();
+  const ev = getMockEventById(id);
+  const [selectedRsvp, setSelectedRsvp] = useState(ev?.myRsvp ?? null);
 
-  const { data: ev, isLoading, isError, refetch } = useQuery({
-    queryKey: ["event", id],
-    queryFn: () => eventsApi.getEvent(id),
-  });
-
-  const rsvpMutation = useMutation({
-    mutationFn: (status) => eventsApi.rsvp(id, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["event", id] }),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: () => eventsApi.deleteEvent(id),
-    onSuccess: () => navigate("/events"),
-  });
-
-  const isOwner = ev?.createdBySub === auth?.user?.profile?.sub;
-
-  if (isLoading) return <LoadingSkeleton count={2} />;
-  if (isError) return <ErrorState onRetry={refetch} />;
   if (!ev) return null;
 
   return (
@@ -81,26 +58,17 @@ export function EventDetailPage() {
             {RSVP_OPTIONS.map(({ value, label, color }) => (
               <button
                 key={value}
-                onClick={() => rsvpMutation.mutate(value)}
-                disabled={rsvpMutation.isPending}
-                className={`flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium transition-all ${ev.myRsvp === value ? `${color} text-white border-transparent` : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground bg-background"}`}
+                onClick={() => setSelectedRsvp(value)}
+                className={`flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium transition-all ${selectedRsvp === value ? `${color} text-white border-transparent` : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground bg-background"}`}
               >
                 {label}
               </button>
             ))}
           </div>
-          {ev.myRsvp && (
-            <p className="mt-2 text-xs text-muted-foreground">Your current RSVP: <span className="font-semibold">{ev.myRsvp}</span></p>
+          {selectedRsvp && (
+            <p className="mt-2 text-xs text-muted-foreground">Your current RSVP: <span className="font-semibold">{selectedRsvp}</span></p>
           )}
         </div>
-
-        {(isOwner || isAdmin) && (
-          <div className="mt-5 border-t border-border pt-4 flex gap-2">
-            <Button variant="destructive" size="sm" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>
-              Delete Event
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
