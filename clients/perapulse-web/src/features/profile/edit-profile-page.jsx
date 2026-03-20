@@ -101,7 +101,7 @@ export function EditProfilePage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
         title="My Profile"
-        subtitle="Review your public profile and switch into edit mode when you want to update it."
+        subtitle="A cleaner snapshot of what other people see and the details you can update."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {publicProfilePath ? (
@@ -128,7 +128,7 @@ export function EditProfilePage() {
 
       <ProfileCard
         profile={profile}
-        subtitle="This is the data other users will see, with sensitive fields hidden on public pages."
+        subtitle="Public profile preview"
         showEmail
       />
 
@@ -139,7 +139,7 @@ export function EditProfilePage() {
               Edit details
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Keep your profile current so students, alumni, and admins see accurate information.
+              Update only the details that matter to your public profile.
             </p>
           </div>
           {isEditing ? (
@@ -157,9 +157,7 @@ export function EditProfilePage() {
 
         {!isEditing ? (
           <p className="rounded-xl border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
-            Edit mode is off. Use the button above when you want to update your
-            display name, department, graduation year, bio, LinkedIn URL, or
-            avatar URL.
+            Edit mode is off. Turn it on when you want to refresh your public details.
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">

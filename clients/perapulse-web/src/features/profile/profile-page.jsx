@@ -38,7 +38,18 @@ export function ProfilePage() {
   if (!profile) return null;
 
   return (
-    <div className="mx-auto max-w-xl">
+    <div className="mx-auto max-w-xl space-y-4">
+      <div className="rounded-3xl border border-border/70 bg-card/70 px-5 py-5 shadow-sm">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80">
+          Public Profile
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+          Profile
+        </h1>
+        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+          This page shows the public details this member has chosen to share.
+        </p>
+      </div>
       <ProfileCard
         profile={profile}
         subtitle="Public profile"
