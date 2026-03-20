@@ -1,28 +1,19 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { CalendarDays, MapPin, Clock } from "lucide-react";
-import { eventsApi } from "@/api/events";
+import { CalendarDays, MapPin } from "lucide-react";
 import { useAuthState } from "@/auth/use-auth-state";
 import { useUiStore } from "@/store/ui-store";
 import { PageHeader } from "@/components/shared/page-header";
-import { CardSkeleton } from "@/components/shared/loading-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
-import { ErrorState } from "@/components/shared/error-state";
 import { Button } from "@/components/ui/button";
+import { getMockEvents } from "@/features/events/mock-events";
 
 export function EventsPage() {
   const { darkMode } = useUiStore();
   const { isAlumni, isAdmin } = useAuthState();
   const [upcomingOnly, setUpcomingOnly] = useState(true);
-
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["events", upcomingOnly],
-    queryFn: () => eventsApi.getEvents(upcomingOnly),
-  });
-
-  const events = data?.content ?? data ?? [];
+  const events = getMockEvents(upcomingOnly);
 
   const actions = (isAlumni || isAdmin) && (
     <Button asChild size="sm">
@@ -49,13 +40,7 @@ export function EventsPage() {
         </button>
       </div>
 
-      {isLoading && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
-        </div>
-      )}
-      {isError && <ErrorState onRetry={refetch} />}
-      {!isLoading && !isError && events.length === 0 && (
+      {events.length === 0 && (
         <EmptyState icon={CalendarDays} title="No events" description="Check back later for upcoming events." />
       )}
 
