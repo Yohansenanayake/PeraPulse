@@ -122,14 +122,86 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -18px, 0) scale(1.04);
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(18px, 10px, 0);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
     }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at top left, oklch(0.88 0.05 264 / 0.35), transparent 26rem),
+      radial-gradient(circle at bottom right, oklch(0.92 0.04 85 / 0.28), transparent 24rem);
+    background-attachment: fixed;
     }
   html {
     @apply font-sans;
     }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 22%, white);
+    color: var(--foreground);
+    }
+}
+
+@layer components {
+  .landing-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(70px);
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .landing-orb-indigo {
+    top: 6rem;
+    left: -5rem;
+    height: 18rem;
+    width: 18rem;
+    background: radial-gradient(circle, rgba(79, 70, 229, 0.38), transparent 68%);
+    animation: float-slow 10s ease-in-out infinite;
+  }
+
+  .landing-orb-amber {
+    right: -4rem;
+    bottom: 8rem;
+    height: 22rem;
+    width: 22rem;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.28), transparent 68%);
+    animation: drift 13s ease-in-out infinite;
+  }
+
+  .landing-grid {
+    background-image:
+      linear-gradient(rgba(79, 70, 229, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79, 70, 229, 0.05) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(circle at center, black, transparent 78%);
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-orb-indigo,
+  .landing-orb-amber {
+    animation: none;
+  }
 }
