@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 
 export function NotificationsPage() {
   const queryClient = useQueryClient();
-  const { setNotifUnreadCount } = useUiStore();
+  const { setNotifUnreadCount, darkMode } = useUiStore();
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["notifications"],
@@ -60,19 +60,19 @@ export function NotificationsPage() {
           <button
             key={n.id}
             onClick={() => !n.read && markOne.mutate(n.id)}
-            className={`flex w-full items-start gap-3 rounded-2xl border px-5 py-4 text-left transition-colors ${n.read ? "border-border bg-card opacity-70" : "border-primary/30 bg-primary/5 hover:bg-primary/8"}`}
+            className={`flex w-full items-start gap-3 rounded-2xl border px-5 py-4 text-left transition-colors ${n.read ? darkMode ? 'border-cyan-500/10 bg-slate-900/30 opacity-70' : 'border-blue-200 bg-blue-50 opacity-70' : darkMode ? 'border-cyan-500/30 bg-cyan-600/10 hover:bg-cyan-600/15' : 'border-blue-300 bg-blue-100 hover:bg-blue-150'}`}
           >
             <span className="mt-1 shrink-0">
               {n.read ? (
-                <Circle className="size-3 text-muted-foreground" />
+                <Circle className={`size-3 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`} />
               ) : (
-                <div className="size-2.5 rounded-full bg-primary mt-0.5" />
+                <div className={`size-2.5 rounded-full mt-0.5 ${darkMode ? 'bg-cyan-400' : 'bg-blue-600'}`} />
               )}
             </span>
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium ${n.read ? "text-muted-foreground" : "text-foreground"}`}>{n.title}</p>
-              {n.body && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{n.body}</p>}
-              <p className="mt-1 text-[10px] text-muted-foreground">
+              <p className={`text-sm font-medium ${n.read ? darkMode ? 'text-slate-400' : 'text-slate-600' : darkMode ? 'text-white' : 'text-slate-900'}`}>{n.title}</p>
+              {n.body && <p className={`mt-0.5 text-xs line-clamp-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{n.body}</p>}
+              <p className={`mt-1 text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                 {n.createdAt ? format(new Date(n.createdAt), "MMM d, yyyy · h:mm a") : ""}
               </p>
             </div>

@@ -138,11 +138,11 @@ export function RoleRequestPage() {
     <div className="mx-auto max-w-xl space-y-6">
       <PageHeader
         title="Request Alumni Status"
-        subtitle="Submit your graduation details to request an upgrade from Student to Alumni."
+        subtitle="Share your graduation year and a little supporting context so an admin can review your alumni request."
       />
 
-      <div className="rounded-2xl border border-amber-300/60 bg-amber-50/60 p-4 text-sm text-amber-800">
-        <p className="mb-1 font-semibold">After approval</p>
+      <div className="rounded-3xl border border-amber-300/60 bg-amber-50/60 p-4 text-sm text-amber-800 shadow-sm">
+        <p className="mb-1 font-semibold">Session note</p>
         <p>
           You must log out and log back in so Keycloak can issue a new token
           with your updated role.
@@ -183,7 +183,7 @@ export function RoleRequestPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
+        className="space-y-4 rounded-3xl border border-border/70 bg-card p-6 shadow-sm"
       >
         <div className="space-y-1.5">
           <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -275,7 +275,7 @@ function StatusCard({ icon: Icon, title, description, tone }) {
   };
 
   return (
-    <div className={`rounded-2xl border p-5 shadow-sm ${tones[tone]}`}>
+    <div className={`rounded-3xl border p-5 shadow-sm ${tones[tone]}`}>
       <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-white/60">
         <Icon className="size-6" />
       </div>

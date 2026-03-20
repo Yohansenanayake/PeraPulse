@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { CalendarDays, MapPin, Clock } from "lucide-react";
 import { eventsApi } from "@/api/events";
 import { useAuthState } from "@/auth/use-auth-state";
+import { useUiStore } from "@/store/ui-store";
 import { PageHeader } from "@/components/shared/page-header";
 import { CardSkeleton } from "@/components/shared/loading-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -12,6 +13,7 @@ import { ErrorState } from "@/components/shared/error-state";
 import { Button } from "@/components/ui/button";
 
 export function EventsPage() {
+  const { darkMode } = useUiStore();
   const { isAlumni, isAdmin } = useAuthState();
   const [upcomingOnly, setUpcomingOnly] = useState(true);
 
@@ -35,13 +37,13 @@ export function EventsPage() {
       <div className="mb-6 flex gap-2">
         <button
           onClick={() => setUpcomingOnly(true)}
-          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${upcomingOnly ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${upcomingOnly ? darkMode ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white' : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-blue-100 text-slate-600 hover:bg-blue-200'}`}
         >
           Upcoming
         </button>
         <button
           onClick={() => setUpcomingOnly(false)}
-          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${!upcomingOnly ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${!upcomingOnly ? darkMode ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white' : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' : darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-blue-100 text-slate-600 hover:bg-blue-200'}`}
         >
           All Events
         </button>
@@ -62,7 +64,7 @@ export function EventsPage() {
           <Link
             key={ev.id}
             to={`/events/${ev.id}`}
-            className="group flex flex-col rounded-2xl border border-border bg-card shadow-sm transition hover:border-primary/40 hover:shadow-md overflow-hidden"
+            className={`group flex flex-col overflow-hidden rounded-2xl border shadow-sm transition ${darkMode ? 'border-cyan-500/20 bg-gradient-to-br from-slate-900/50 to-blue-900/30 hover:border-cyan-400/50 hover:shadow-lg' : 'border-blue-200 bg-gradient-to-br from-blue-50 to-white hover:border-blue-400 hover:shadow-lg'}`}
           >
             {ev.bannerUrl && (
               <img
@@ -73,10 +75,10 @@ export function EventsPage() {
               />
             )}
             <div className="flex flex-1 flex-col p-4">
-              <h3 className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-2">
+              <h3 className={`text-sm font-semibold line-clamp-2 transition-colors ${darkMode ? 'text-white group-hover:text-cyan-300' : 'text-slate-900 group-hover:text-blue-600'}`}>
                 {ev.title}
               </h3>
-              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+              <div className={`mt-2 space-y-1 text-xs ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                 <span className="flex items-center gap-1.5">
                   <CalendarDays className="size-3.5" />
                   {ev.startTime ? format(new Date(ev.startTime), "MMM d, yyyy · h:mm a") : "TBD"}
